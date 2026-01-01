@@ -495,3 +495,4 @@ CREATE POLICY "Only super_admin can delete site settings"
    - useAuth hook only returns user object, not role
    - If admin link needs to be shown conditionally, role would need to be added
 
+

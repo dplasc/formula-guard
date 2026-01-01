@@ -70,3 +70,4 @@ COMMENT ON COLUMN formulas.created_at IS 'Timestamp when formula was created';
 COMMENT ON COLUMN formulas.updated_at IS 'Timestamp when formula was last updated (auto-updated by trigger)';
 
 
+

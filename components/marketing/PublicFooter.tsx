@@ -39,3 +39,4 @@ export default function PublicFooter({ socialLinks }: PublicFooterProps) {
   );
 }
 
+

@@ -11,3 +11,4 @@ export default async function DashboardLayout({
   return <>{children}</>;
 }
 
+

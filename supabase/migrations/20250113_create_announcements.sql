@@ -85,3 +85,4 @@ COMMENT ON COLUMN site_announcements.published_at IS 'When the announcement was 
 COMMENT ON TABLE announcement_reads IS 'Tracks which users have read which announcements';
 COMMENT ON COLUMN announcement_reads.read_at IS 'When the user marked the announcement as read';
 
+

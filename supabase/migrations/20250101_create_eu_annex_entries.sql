@@ -39,3 +39,4 @@ COMMENT ON COLUMN eu_annex_entries.active_from IS 'Date from which this entry is
 COMMENT ON COLUMN eu_annex_entries.active_to IS 'Date until which this entry is active (NULL = no expiry)';
 
 
+

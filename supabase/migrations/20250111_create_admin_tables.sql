@@ -87,3 +87,4 @@ COMMENT ON TABLE site_settings IS 'Site-wide settings editable by super_admin on
 COMMENT ON COLUMN site_settings.key IS 'Setting key (e.g., instagram_url, contact_email)';
 COMMENT ON COLUMN site_settings.value IS 'Setting value';
 
+

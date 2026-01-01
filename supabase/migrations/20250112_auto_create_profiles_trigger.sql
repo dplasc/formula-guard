@@ -25,3 +25,4 @@ CREATE TRIGGER on_auth_user_created
 -- Add comment
 COMMENT ON FUNCTION public.handle_new_user() IS 'Automatically creates a profile row with role=user when a new user signs up';
 
+
