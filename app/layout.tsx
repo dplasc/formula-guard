@@ -15,11 +15,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://formulaguard.com"),
   ...buildMetadata({
     title: "FormulaGuard",
-    description: "Natural cosmetics formulation platform with safety guardrails and compliance checks",
+    description: "FormulaGuard helps cosmetic formulators build safe, compliant formulas with ingredient limits, EU Annex guidance, and IFRA notes — all in one workflow.",
     path: "/",
   }),
+  description: "FormulaGuard helps cosmetic formulators build safe, compliant formulas with ingredient limits, EU Annex guidance, and IFRA notes — all in one workflow.",
+  openGraph: {
+    title: "FormulaGuard",
+    description: "FormulaGuard helps cosmetic formulators build safe, compliant formulas with ingredient limits, EU Annex guidance, and IFRA notes — all in one workflow.",
+    url: "https://formulaguard.com/",
+    siteName: "FormulaGuard",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "FormulaGuard",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "FormulaGuard",
+    description: "FormulaGuard helps cosmetic formulators build safe, compliant formulas with ingredient limits, EU Annex guidance, and IFRA notes — all in one workflow.",
+    images: ["/og-image.png"],
+  },
   icons: {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
