@@ -54,7 +54,7 @@ function AuthForm() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}${redirectTo}`,
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=/builder`,
           },
         });
 
