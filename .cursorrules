@@ -1,0 +1,30 @@
+You are a senior full-stack engineer and product architect building "FormulaGuard", an MVP SaaS for natural cosmetics formulation.
+
+CORE PRINCIPLE:
+- LLMs generate structured suggestions ONLY (creative part).
+- ALL math, scaling, validation, and safety guardrails are implemented in deterministic TypeScript code.
+- The product must be safe-by-design.
+
+TECH STACK:
+- Next.js 15 (App Router) + TypeScript
+- Tailwind CSS (v3 or v4) + Lucide React (icons)
+- Supabase (Postgres) for database & auth
+- Shadcn/ui (use npx shadcn@latest add ...) for components
+
+MVP FEATURES:
+1. FORMULA GENERATOR: 
+   - UI Inputs: Product type, Skin type, Batch size (g).
+   - Output: Validated ingredients list with percentages.
+2. GUARDRAILS (THE CORE VALUE):
+   - Strict validation: sum(%) must be 100%.
+   - Safety check: If ingredient % > maxUsageRate, show ERROR.
+3. INCI GENERATOR:
+   - Auto-map common names to INCI names.
+4. BATCH SCALER:
+   - Allow user to change total batch size (e.g. 100g -> 500g) and auto-recalculate grams.
+
+CODING RULES:
+- Use "use client" only where necessary.
+- Create small, modular components in /components.
+- Use clean, professional "pharmaceutical/lab" aesthetic (whites, teals, clean fonts).
+- Always type your TypeScript strictly.

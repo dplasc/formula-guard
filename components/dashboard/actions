@@ -1,0 +1,41 @@
+'use server';
+
+import { createClient } from '@/lib/supabase/server';
+
+export type FormulaListItem = {
+  id: string;
+  name: string;
+  status: string;
+  updated_at: string;
+};
+
+export async function getFormulas(): Promise<{ 
+  data: FormulaListItem[] | null; 
+  error: string | null 
+}> {
+  try {
+    const supabase = await createClient();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return { data: null, error: 'Not authenticated' };
+    }
+
+    const { data, error } = await supabase
+      .from('formulas')
+      .select('id, name, status, updated_at')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching formulas:', error);
+      return { data: null, error: error.message };
+    }
+
+    return { data: data as FormulaListItem[], error: null };
+  } catch (err) {
+    console.error('Unexpected error in getFormulas:', err);
+    return { data: null, error: 'Failed to fetch formulas' };
+  }
+}
