@@ -91,7 +91,6 @@ function formatDate(dateString: string): string {
 }
 
 export default function FormulaCard({ formula, onDelete, onDuplicate }: FormulaCardProps) {
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
   
@@ -100,22 +99,16 @@ export default function FormulaCard({ formula, onDelete, onDuplicate }: FormulaC
   const technicalStatusStyles = getTechnicalStatusBadgeStyles(technicalStatus);
   const formattedDate = formatDate(formula.updated_at);
 
-  const handleDeleteClick = () => {
-    setShowConfirmModal(true);
-  };
+  const handleDeleteClick = async () => {
+    const ok = window.confirm("Delete this formula? This cannot be undone.");
+    if (!ok) return;
 
-  const handleCancel = () => {
-    setShowConfirmModal(false);
-  };
-
-  const handleConfirmDelete = async () => {
     setIsDeleting(true);
     
     try {
       const result = await deleteFormula(formula.id);
       
       if (result.success) {
-        setShowConfirmModal(false);
         if (onDelete) {
           onDelete(formula.id);
         }
@@ -206,44 +199,6 @@ export default function FormulaCard({ formula, onDelete, onDuplicate }: FormulaC
           </button>
         </div>
       </div>
-
-      {/* Confirmation Modal */}
-      {showConfirmModal && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          onClick={handleCancel}
-        >
-          <div
-            className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                Delete Formula?
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Are you sure you want to delete &apos;{formula.name || 'Unnamed Formula'}&apos;? This action cannot be undone.
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={handleCancel}
-                  disabled={isDeleting}
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmDelete}
-                  disabled={isDeleting}
-                  className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isDeleting ? 'Deleting...' : 'Delete Formula'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

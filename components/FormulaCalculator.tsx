@@ -134,6 +134,8 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
   });
   const [showAdvancedLimits, setShowAdvancedLimits] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [savedAt, setSavedAt] = useState<string | null>(null);
   const [currentFormulaId, setCurrentFormulaId] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isDirty, setIsDirty] = useState<boolean>(false);
@@ -192,6 +194,48 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
   useEffect(() => {
     onDirtyChange?.(isDirty);
   }, [isDirty, onDirtyChange]);
+
+  // Navigation guard: warn when leaving with unsaved changes
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!isDirty) return;
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
+
+  // Intercept internal navigation links when isDirty is true
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (!isDirty) return;
+
+      const target = e.target as HTMLElement | null;
+      const a = target?.closest?.('a') as HTMLAnchorElement | null;
+      if (!a) return;
+
+      const href = a.getAttribute('href') || '';
+      if (!href) return;
+
+      // ignore hash/external/mailto/tel
+      if (href.startsWith('#')) return;
+      if (href.startsWith('http://') || href.startsWith('https://')) return;
+      if (href.startsWith('mailto:') || href.startsWith('tel:')) return;
+
+      // only internal routes
+      if (!href.startsWith('/')) return;
+
+      const ok = window.confirm('You have unsaved changes. Leave without saving?');
+      if (!ok) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
+  }, [isDirty]);
 
   const addIngredient = () => {
     const newIngredient: Ingredient = {
@@ -806,6 +850,124 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
 
   const total = ingredients.reduce((sum, ing) => sum + (ing.percentage || 0), 0);
 
+  // Helper function to get max usage for an ingredient based on product type
+  const getIngredientMaxUsageForProductType = (
+    ingredient: IngredientData,
+    productType: 'leaveOn' | 'rinseOff'
+  ): number | null => {
+    if (productType === 'leaveOn') {
+      if (typeof ingredient.maxUsageLeaveOn === 'number') {
+        return ingredient.maxUsageLeaveOn;
+      } else if (typeof ingredient.maxUsage === 'number') {
+        return ingredient.maxUsage;
+      }
+      return null;
+    } else {
+      // productType === 'rinseOff'
+      if (typeof ingredient.maxUsageRinseOff === 'number') {
+        return ingredient.maxUsageRinseOff;
+      } else if (typeof ingredient.maxUsage === 'number') {
+        return ingredient.maxUsage;
+      }
+      return null;
+    }
+  };
+
+  // IFRA max usage enforcement for fragrance ingredients
+  const ifraHardFail = useMemo(() => {
+    const allAvailableIngredients = [...allIngredients, ...customIngredients];
+    
+    for (const ing of ingredients) {
+      // Only check fragrance components
+      if (ing.isFragranceComponent !== true) {
+        continue;
+      }
+
+      // Check if ingredient has IFRA entries
+      const fullIngredient = ing.ingredientId
+        ? allAvailableIngredients.find(ai => ai.id === ing.ingredientId)
+        : allAvailableIngredients.find(ai => ai.name.toLowerCase() === ing.name.toLowerCase());
+
+      let originalInci: string | undefined;
+      if (fullIngredient?.inci) {
+        originalInci = fullIngredient.inci;
+      } else if (ing.isCustom) {
+        const customIng = customIngredients.find(ci => ci.name.toLowerCase() === ing.name.toLowerCase());
+        originalInci = customIng?.inci || ing.name.trim();
+      } else {
+        originalInci = ing.name.trim();
+      }
+
+      // Resolve to canonical INCI using synonym map
+      const norm = (s?: string) => (s ?? '').trim().toLowerCase();
+      const keyInci = norm(originalInci);
+      const keyName = norm(ing.name);
+      const canonical = synonymMap[keyInci] || synonymMap[keyName] || originalInci;
+
+      // Normalize lookup key: take first INCI before comma, then normalize
+      const firstInci = canonical ? canonical.split(',')[0] : '';
+      const normalizedLookupKey = firstInci.trim().toLowerCase();
+
+      // Check if ingredient has IFRA entries
+      if (!normalizedLookupKey || !ifraComplianceMap[normalizedLookupKey] || ifraComplianceMap[normalizedLookupKey].length === 0) {
+        continue; // No IFRA data, skip
+      }
+
+      // Get max usage for current product type
+      // TODO: When IFRA entries have max_leave_on/max_rinse_off fields, use those instead
+      // For now, use ingredient's maxUsage from full ingredient data (structure allows easy swap later)
+      let selectedMax: number | null = null;
+      if (fullIngredient) {
+        selectedMax = getIngredientMaxUsageForProductType(fullIngredient, productType);
+      } else if (ing.maxUsage !== undefined) {
+        // Fallback to ingredient's maxUsage if full ingredient not found
+        selectedMax = ing.maxUsage;
+      }
+      
+      if (selectedMax !== null && ing.percentage > selectedMax) {
+        return { failed: true, max: selectedMax };
+      }
+    }
+
+    return { failed: false, max: null };
+  }, [ingredients, ifraComplianceMap, synonymMap, productType, customIngredients]);
+
+  // EU Annex banned/prohibited ingredient hard-fail check
+  const euBannedHardFail = useMemo(() => {
+    // Check if any EU compliance block is Annex II (prohibited/banned)
+    const bannedHits = euComplianceBlocks.filter(block => block.annex === 'II');
+    return bannedHits.length > 0;
+  }, [euComplianceBlocks]);
+
+  // EU Annex III restricted ingredient hard-fail check (only when numeric max exists)
+  const euRestrictedHardFail = useMemo(() => {
+    // Filter for Annex III blocks with numeric max_percentage
+    const restrictedHits = euComplianceBlocks.filter(
+      block => block.annex === 'III' && 
+               typeof block.max_percentage === 'number' && 
+               block.max_percentage !== null
+    );
+    
+    if (restrictedHits.length > 0) {
+      // Return first failure (minimal)
+      const firstHit = restrictedHits[0];
+      return {
+        failed: true,
+        ingredientName: firstHit.ingredientName,
+        max: firstHit.max_percentage as number,
+      };
+    }
+    
+    return { failed: false };
+  }, [euComplianceBlocks]);
+
+  // Unified hard-fail summary
+  const hasHardFail = ifraHardFail.failed || euBannedHardFail || euRestrictedHardFail.failed;
+  const hardFailReasons: string[] = [];
+  if (euBannedHardFail) hardFailReasons.push("EU: banned ingredient present");
+  if (euRestrictedHardFail.failed) hardFailReasons.push(`EU: restricted ingredient exceeds max (${euRestrictedHardFail.ingredientName} ${euRestrictedHardFail.max}%)`);
+  if (ifraHardFail.failed) hardFailReasons.push(`IFRA: fragrance exceeds max (${ifraHardFail.max}%)`);
+
   // Calculate total batch cost
   const calculateTotalBatchCost = () => {
     return ingredients.reduce((sum, ing) => {
@@ -950,29 +1112,6 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
 
   const safetyWarnings = buildSafetyWarnings();
 
-  // Helper function to get max usage for an ingredient based on product type
-  const getIngredientMaxUsageForProductType = (
-    ingredient: IngredientData,
-    productType: 'leaveOn' | 'rinseOff'
-  ): number | null => {
-    if (productType === 'leaveOn') {
-      if (typeof ingredient.maxUsageLeaveOn === 'number') {
-        return ingredient.maxUsageLeaveOn;
-      } else if (typeof ingredient.maxUsage === 'number') {
-        return ingredient.maxUsage;
-      }
-      return null;
-    } else {
-      // productType === 'rinseOff'
-      if (typeof ingredient.maxUsageRinseOff === 'number') {
-        return ingredient.maxUsageRinseOff;
-      } else if (typeof ingredient.maxUsage === 'number') {
-        return ingredient.maxUsage;
-      }
-      return null;
-    }
-  };
-
   // Compute group max usage warnings for all categories
   const groupMaxUsageWarnings = useMemo(() => {
     const allAvailableIngredients = [...allIngredients, ...customIngredients].map(enrichIngredientWithKb);
@@ -1058,6 +1197,8 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
 
   const handleDeleteFormula = (id: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent loading when clicking delete
+    const ok = window.confirm("Delete this formula? This cannot be undone.");
+    if (!ok) return;
     const updatedFormulas = savedFormulas.filter((f) => f.id !== id);
     setSavedFormulas(updatedFormulas);
     localStorage.setItem("saved_formulas", JSON.stringify(updatedFormulas));
@@ -1412,20 +1553,17 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
       setSaveError(null);
       setNotification(null);
       
-      // Prompt for name if empty
+      // Auto-generate name if empty
       let nameToSave = formulaName.trim();
       if (!nameToSave) {
-        const promptName = prompt('Please enter a name for this formula:');
-        if (!promptName || !promptName.trim()) {
-          setIsSaving(false);
-          setNotification({ 
-            type: 'error', 
-            message: 'Formula name is required to save.' 
-          });
-          setTimeout(() => setNotification(null), 3000);
-          return; // Abort save
-        }
-        nameToSave = promptName.trim();
+        // Generate default name: "Untitled — YYYY-MM-DD HH:mm"
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        nameToSave = `Untitled — ${year}-${month}-${day} ${hours}:${minutes}`;
         setFormulaName(nameToSave);
       }
       
@@ -1434,6 +1572,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
       const hasNegativePercentage = ingredients.some(ing => ing.percentage < 0);
       if (hasNegativePercentage) {
         setIsSaving(false);
+        setSaveStatus('idle');
         setIsDirty(true); // Keep dirty state
         setNotification({ 
           type: 'error', 
@@ -1446,6 +1585,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
       // Check for exact 100% total
       if (Math.abs(total - 100) > 0.01) { // Allow small floating point tolerance
         setIsSaving(false);
+        setSaveStatus('idle');
         setIsDirty(true); // Keep dirty state
         setNotification({ 
           type: 'error', 
@@ -1454,6 +1594,48 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
         setTimeout(() => setNotification(null), 5000);
         return; // Abort save
       }
+
+      // IFRA max usage enforcement: block save if fragrance exceeds IFRA limit
+      if (ifraHardFail.failed) {
+        setIsSaving(false);
+        setSaveStatus('error');
+        setIsDirty(true); // Keep dirty state
+        setNotification({ 
+          type: 'error', 
+          message: `IFRA limit exceeded for Fragrance (max ${ifraHardFail.max}%).` 
+        });
+        setTimeout(() => setNotification(null), 5000);
+        return; // Abort save
+      }
+
+      // EU Annex banned ingredient enforcement: block save if banned ingredient present
+      if (euBannedHardFail) {
+        setIsSaving(false);
+        setSaveStatus('error');
+        setIsDirty(true); // Keep dirty state
+        setNotification({ 
+          type: 'error', 
+          message: 'EU compliance: banned ingredient present — saving disabled.' 
+        });
+        setTimeout(() => setNotification(null), 5000);
+        return; // Abort save
+      }
+
+      // EU Annex III restricted ingredient enforcement: block save if restricted ingredient exceeds numeric max
+      if (euRestrictedHardFail.failed) {
+        setIsSaving(false);
+        setSaveStatus('error');
+        setIsDirty(true); // Keep dirty state
+        setNotification({ 
+          type: 'error', 
+          message: `EU compliance: restricted ingredient exceeds max (${euRestrictedHardFail.ingredientName} ${euRestrictedHardFail.max}%) — saving disabled.` 
+        });
+        setTimeout(() => setNotification(null), 5000);
+        return; // Abort save
+      }
+
+      // Set saving status before starting the actual save operation
+      setSaveStatus('saving');
 
       try {
         // Prepare the formula data to save (full snapshot for formula_data)
@@ -1492,9 +1674,16 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
           setIsDirty(false);
           setLastSavedAt(new Date());
           setSaveError(null);
+          setSaveStatus('saved');
+          const now = new Date();
+          const hh = String(now.getHours()).padStart(2, '0');
+          const mm = String(now.getMinutes()).padStart(2, '0');
+          setSavedAt(`${hh}:${mm}`);
           setNotification({ type: 'success', message: 'Saved' });
           // Clear notification after 3 seconds
           setTimeout(() => setNotification(null), 3000);
+          // Reset save status after 2 seconds
+          setTimeout(() => setSaveStatus('idle'), 2000);
         } else {
           throw new Error('Save operation completed but no formula ID was returned');
         }
@@ -1503,6 +1692,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
         console.error("Error saving formula:", error);
         setIsDirty(true); // Keep dirty state - status must remain "Unsaved changes"
         setSaveError('Failed to save');
+        setSaveStatus('error');
         setNotification({ type: 'error', message: 'Failed to save. Please check your connection.' });
         // Clear error notification after 5 seconds
         setTimeout(() => setNotification(null), 5000);
@@ -1718,6 +1908,27 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                     </>
                   )}
                 </button>
+                {saveStatus !== 'idle' && (
+                  <span className={`text-sm flex items-center ${
+                    saveStatus === 'saving' ? 'text-gray-500' :
+                    saveStatus === 'saved' ? 'text-green-600' :
+                    'text-red-600'
+                  }`}>
+                    {saveStatus === 'saving' && 'Saving…'}
+                    {saveStatus === 'saved' && 'Saved ✓'}
+                    {saveStatus === 'error' && 'Error saving formula'}
+                  </span>
+                )}
+                {savedAt && (
+                  <span className="text-sm text-gray-500">
+                    Saved at {savedAt}
+                  </span>
+                )}
+                {hasHardFail && (
+                  <div className="mt-2 text-sm text-red-600 leading-relaxed">
+                    Cannot save: {hardFailReasons.join('; ')}.
+                  </div>
+                )}
                 <button
                   onClick={handleSaveAs}
                   disabled={isSaving}
@@ -2852,6 +3063,13 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                 })}
             </div>
           )}
+        </div>
+
+        {/* Disclaimer */}
+        <div className="mt-6 text-xs text-gray-500 leading-relaxed">
+          Disclaimer: FormulaGuard provides informational guidance only.
+          It does not replace regulatory review or professional safety assessment.
+          You are responsible for compliance with applicable laws and regulations.
         </div>
 
         {/* Load Formula Modal */}
