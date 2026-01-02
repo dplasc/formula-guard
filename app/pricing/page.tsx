@@ -4,9 +4,8 @@ import SocialIcons from "@/components/SocialIcons";
 import { getSocialLinks } from "@/lib/siteSettings";
 import { buildMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
-import BillingPortalButton from "@/components/BillingPortalButton";
 import PricingViewLogger from "@/components/PricingViewLogger";
-import CheckoutButton from "@/components/CheckoutButton";
+import PricingSection from "@/components/pricing/PricingSection";
 
 export const metadata = buildMetadata({
   title: "Pricing",
@@ -32,55 +31,13 @@ export default async function PricingPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 sm:p-10">
           <h1 className="text-4xl font-bold text-gray-900 mb-8">Pricing</h1>
 
-          <div className="prose prose-gray max-w-none space-y-8">
-            {/* Intro */}
-            <section>
-              <p className="text-gray-700 leading-relaxed">
-                Plans are coming soon.
-              </p>
-            </section>
-
-            {/* Plans Comparison */}
-            <section>
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-semibold text-gray-900 mb-4">Free Plan</h2>
-                  <ul className="list-disc list-inside text-gray-700 space-y-2">
-                    <li>Build formulas with ingredient calculator</li>
-                    <li>Compliance checks (EU, IFRA)</li>
-                    <li>Print/PDF export</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h2 className="text-2xl font-semibold text-gray-900 mb-4">Pro Plan</h2>
-                  <ul className="list-disc list-inside text-gray-700 space-y-2">
-                    <li>Everything in Free</li>
-                    <li>Save/Load formulas</li>
-                    <li>Dashboard management</li>
-                  </ul>
-                  <p className="mt-4 text-sm text-gray-600 leading-relaxed">
-                    After purchase, Pro access will be enabled automatically (coming soon).
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            {/* Upgrade CTA or Manage Billing */}
-            <section>
-              <div className="flex flex-col items-center gap-3">
-                {isPaidUser ? (
-                  <BillingPortalButton />
-                ) : (
-                  // TEST MODE – checkout temporarily enabled for verification
-                  <CheckoutButton />
-                )}
-              </div>
-            </section>
+          <div className="prose prose-gray max-w-none">
+            {/* Pricing Section with Plan Selector and Comparison */}
+            <PricingSection isPaidUser={isPaidUser} />
 
             {/* Disclaimer */}
-            <section>
-              <p className="text-sm text-gray-600 leading-relaxed">
+            <section className="mt-8 pt-8 border-t border-gray-200">
+              <p className="text-sm text-gray-600 leading-relaxed text-center">
                 Features and availability may vary. This information is provided for informational purposes only.
               </p>
             </section>
