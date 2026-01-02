@@ -18,8 +18,6 @@ export const dynamic = 'force-dynamic';
 
 export default async function PricingPage() {
   const socialLinks = await getSocialLinks();
-  const stripeCheckoutUrl = process.env.NEXT_PUBLIC_STRIPE_CHECKOUT_URL;
-  const hasCheckout = !!stripeCheckoutUrl;
   
   // Check if user is authenticated and paid
   const supabase = await createClient();
@@ -73,20 +71,9 @@ export default async function PricingPage() {
               <div className="flex flex-col items-center gap-3">
                 {isPaidUser ? (
                   <BillingPortalButton />
-                ) : hasCheckout ? (
-                  <CheckoutButton checkoutUrl={stripeCheckoutUrl!} />
                 ) : (
-                  <>
-                    <button
-                      disabled
-                      className="px-6 py-3 bg-gray-400 text-white rounded-md cursor-not-allowed font-medium"
-                    >
-                      Upgrade to Pro
-                    </button>
-                    <p className="text-sm text-gray-600">
-                      Checkout is not available yet.
-                    </p>
-                  </>
+                  // TEST MODE – checkout temporarily enabled for verification
+                  <CheckoutButton />
                 )}
               </div>
             </section>
