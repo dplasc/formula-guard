@@ -80,7 +80,21 @@ It is intended to ensure production stability, compliance enforcement, and UX co
 
 ---
 
-## 6. Known Non-Issues / Out of Scope
+## 6. Stripe / Payment Integration
+
+- [ ] `/pricing` route uses `export const dynamic = 'force-dynamic'`
+- [ ] Stripe Checkout is triggered via `POST /api/stripe/checkout` (NOT via `NEXT_PUBLIC_STRIPE_CHECKOUT_URL`)
+- [ ] Stripe webhook expectations:
+  - [ ] `GET /api/stripe/webhook` → 405 (expected)
+  - [ ] `POST /api/stripe/webhook` handled for Stripe events
+- [ ] Stripe merchant name shown to users: **OGLAŠAVAJ SE**
+- [ ] Checkout branding rules:
+  - [ ] No logo
+  - [ ] No icon
+
+---
+
+## 7. Known Non-Issues / Out of Scope
 
 - [x] ESLint warnings are present but non-blocking
 - [x] No automated test framework is implemented yet
