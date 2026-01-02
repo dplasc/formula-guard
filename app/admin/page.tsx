@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSiteSettings, getUserRole } from "./actions";
 import SiteSettingsForm from "./SiteSettingsForm";
 import AnnouncementsSection from "./AnnouncementsSection";
+import PlanManagement from "./PlanManagement";
 
 export default async function AdminPage() {
   const supabase = await createSupabaseServerClient();
@@ -40,6 +41,8 @@ export default async function AdminPage() {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Site Settings</h2>
           <SiteSettingsForm initialSettings={siteSettings} />
         </div>
+
+        <PlanManagement />
 
         <AnnouncementsSection />
       </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { User, LogOut, ChevronDown } from "lucide-react";
 
@@ -59,6 +60,24 @@ export default function UserMenu() {
           <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-20">
             <div className="px-4 py-3 border-b border-gray-200">
               <p className="text-sm font-medium text-gray-900">{user.email}</p>
+              <div className="mt-2">
+                {user.app_metadata?.plan === "pro" ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-800">
+                    Pro
+                  </span>
+                ) : (
+                  <span className="text-xs text-gray-600">
+                    Free plan{" "}
+                    <Link
+                      href="/pricing"
+                      className="text-teal-600 hover:text-teal-700 underline"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Upgrade
+                    </Link>
+                  </span>
+                )}
+              </div>
             </div>
             <button
               onClick={handleSignOut}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ingredients as allIngredients, type Ingredient as IngredientDataBase } from "@/data/mockIngredients";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,9 +13,10 @@ type IngredientData = IngredientDataBase & {
   isVerified?: boolean;
   productType?: 'leave-on' | 'rinse-off' | 'both';
 };
-import { Download, Trash2, Search, FolderOpen, X, Sparkles, Briefcase, User, Plus, Check, Lock, Cloud, FilePlus, Pin, PinOff, AlertTriangle, Info, AlertCircle, ChevronDown, ChevronUp, HelpCircle, Share2 } from "lucide-react";
+import { Download, Trash2, Search, FolderOpen, X, Sparkles, Briefcase, User, Plus, Check, Lock, Cloud, FilePlus, Pin, PinOff, AlertTriangle, Info, AlertCircle, ChevronDown, ChevronUp, HelpCircle, Share2, Printer } from "lucide-react";
 import { generateCosmeticFormulationReport } from "@/utils/pdfGenerator";
 import { saveFormula } from "@/app/actions/formulas";
+import { getFormulaById } from "@/app/actions/getFormulaById";
 import { evaluateSafetyWarnings, getUnverifiedIngredients, type SafetyWarning } from "@/lib/safetyRules";
 import { getIngredientKbMap, type IngredientKbRow } from "@/app/builder/actions-ingredient-kb";
 import { resolveIngredientInci } from "@/app/builder/actions-ingredient-synonyms";
@@ -84,6 +85,7 @@ interface FormulaCalculatorProps {
 
 export default function FormulaCalculator({ initialFormulaId, initialFormulaData, onDirtyChange }: FormulaCalculatorProps = {}) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [focusedIngredientId, setFocusedIngredientId] = useState<string | null>(null);
@@ -141,11 +143,44 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
   const [isDirty, setIsDirty] = useState<boolean>(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isFormulaDeleted, setIsFormulaDeleted] = useState<boolean>(false);
   const [workflowStatus, setWorkflowStatus] = useState<'draft' | 'testing' | 'final' | 'archived'>('draft');
   const [isPinned, setIsPinned] = useState<boolean>(false);
   const [organizationNotes, setOrganizationNotes] = useState<string>('');
   const [productType, setProductType] = useState<'leaveOn' | 'rinseOff'>('leaveOn');
   const [ingredientKbMap, setIngredientKbMap] = useState<Record<string, IngredientKbRow>>({});
+  
+  // BUSINESS-3: Derive isPaidUser from Supabase user metadata (canonical: plan === "pro")
+  const isPaidUser = useMemo(() => {
+    if (!user) return false; // Default to free if user not loaded
+    // Canonical paid check: app_metadata.plan === "pro"
+    return user.app_metadata?.plan === "pro";
+  }, [user]);
+  
+  // STRIPE-3: Show upgrade success message
+  const [showUpgradeSuccess, setShowUpgradeSuccess] = useState<boolean>(false);
+  
+  useEffect(() => {
+    // Check if user is paid and has upgraded=1 query param
+    if (isPaidUser && searchParams.get('upgraded') === '1') {
+      setShowUpgradeSuccess(true);
+      
+      // Auto-hide after 2.5 seconds
+      const timer = setTimeout(() => {
+        setShowUpgradeSuccess(false);
+        
+        // Remove query param from URL
+        const newSearchParams = new URLSearchParams(searchParams.toString());
+        newSearchParams.delete('upgraded');
+        const newSearch = newSearchParams.toString();
+        const newUrl = newSearch ? `?${newSearch}` : window.location.pathname;
+        router.replace(newUrl, { scroll: false });
+      }, 2500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isPaidUser, searchParams, router]);
+  
   const [synonymMap, setSynonymMap] = useState<Record<string, string>>({}); // original name -> canonical_inci
   const [euComplianceMap, setEuComplianceMap] = useState<Record<string, EuAnnexEntry[]>>({});
   const [euComplianceBlocks, setEuComplianceBlocks] = useState<BlockItem[]>([]);
@@ -245,6 +280,121 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
       phase: "A", // Default phase
     };
     setIngredients([...ingredients, newIngredient]);
+    markDirty();
+  };
+
+  // GROWTH-2: Load example formula for new users
+  const loadExampleFormula = () => {
+    // GROWTH-3: Log example formula loaded event
+    console.info("[FG_EVENT]", {
+      event: "example_formula_loaded",
+      timestamp: new Date().toISOString()
+    });
+
+    // Find ingredients from the database
+    const jojobaOil = allIngredients.find(ing => ing.id === "jojoba-oil");
+    const squalane = allIngredients.find(ing => ing.id === "squalane-olive");
+    const olivem = allIngredients.find(ing => ing.id === "olivem-1000");
+    const panthenol = allIngredients.find(ing => ing.id === "d-panthenol");
+    const hyaluronicAcid = allIngredients.find(ing => ing.id === "hyaluronic-acid-lmw");
+    const sweetAlmondOil = allIngredients.find(ing => ing.id === "sweet-almond-oil");
+
+    // Create example formula with safe percentages (sums to 100%)
+    const exampleIngredients: Ingredient[] = [];
+    let idCounter = 1;
+
+    if (sweetAlmondOil) {
+      exampleIngredients.push({
+        id: `example-${idCounter++}`,
+        name: sweetAlmondOil.name,
+        percentage: 35,
+        phase: "A",
+        ingredientId: sweetAlmondOil.id,
+        maxUsage: sweetAlmondOil.maxUsage,
+        description: sweetAlmondOil.description,
+        pricePerKg: sweetAlmondOil.averagePricePerKg,
+        isPremium: sweetAlmondOil.isPremium,
+        isCustom: sweetAlmondOil.isCustom,
+      });
+    }
+
+    if (jojobaOil) {
+      exampleIngredients.push({
+        id: `example-${idCounter++}`,
+        name: jojobaOil.name,
+        percentage: 25,
+        phase: "A",
+        ingredientId: jojobaOil.id,
+        maxUsage: jojobaOil.maxUsage,
+        description: jojobaOil.description,
+        pricePerKg: jojobaOil.averagePricePerKg,
+        isPremium: jojobaOil.isPremium,
+        isCustom: jojobaOil.isCustom,
+      });
+    }
+
+    if (squalane) {
+      exampleIngredients.push({
+        id: `example-${idCounter++}`,
+        name: squalane.name,
+        percentage: 20,
+        phase: "A",
+        ingredientId: squalane.id,
+        maxUsage: squalane.maxUsage,
+        description: squalane.description,
+        pricePerKg: squalane.averagePricePerKg,
+        isPremium: squalane.isPremium,
+        isCustom: squalane.isCustom,
+      });
+    }
+
+    if (olivem) {
+      exampleIngredients.push({
+        id: `example-${idCounter++}`,
+        name: olivem.name,
+        percentage: 15,
+        phase: "A",
+        ingredientId: olivem.id,
+        maxUsage: olivem.maxUsage,
+        description: olivem.description,
+        pricePerKg: olivem.averagePricePerKg,
+        isPremium: olivem.isPremium,
+        isCustom: olivem.isCustom,
+      });
+    }
+
+    if (panthenol) {
+      exampleIngredients.push({
+        id: `example-${idCounter++}`,
+        name: panthenol.name,
+        percentage: 4.8,
+        phase: "A",
+        ingredientId: panthenol.id,
+        maxUsage: panthenol.maxUsage,
+        description: panthenol.description,
+        pricePerKg: panthenol.averagePricePerKg,
+        isPremium: panthenol.isPremium,
+        isCustom: panthenol.isCustom,
+      });
+    }
+
+    if (hyaluronicAcid) {
+      exampleIngredients.push({
+        id: `example-${idCounter++}`,
+        name: hyaluronicAcid.name,
+        percentage: 0.2,
+        phase: "A",
+        ingredientId: hyaluronicAcid.id,
+        maxUsage: hyaluronicAcid.maxUsage,
+        description: hyaluronicAcid.description,
+        pricePerKg: hyaluronicAcid.averagePricePerKg,
+        isPremium: hyaluronicAcid.isPremium,
+        isCustom: hyaluronicAcid.isCustom,
+      });
+    }
+
+    // Set the example ingredients (sums to 100%)
+    setIngredients(exampleIngredients);
     markDirty();
   };
 
@@ -440,6 +590,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
       setOrganizationNotes(initialFormulaData.organizationNotes || '');
       // Reset sync states when loading
       setIsDirty(false);
+      setIsFormulaDeleted(false);
       setSaveError(null);
     }
   }, [initialFormulaData, initialFormulaId]);
@@ -1479,6 +1630,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
     
     // Reset sync states
     setIsDirty(false);
+    setIsFormulaDeleted(false);
     setLastSavedAt(null);
     setSaveError(null);
     setNotification(null);
@@ -1549,6 +1701,16 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
 
   const handleCloudSave = async () => {
     requireAuth(async () => {
+      // BUSINESS-1: Free vs Paid gate - block save for free users
+      if (!isPaidUser) {
+        setNotification({ 
+          type: 'error', 
+          message: 'Saving formulas is available on the paid plan.' 
+        });
+        setTimeout(() => setNotification(null), 5000);
+        return;
+      }
+
       setIsSaving(true);
       setSaveError(null);
       setNotification(null);
@@ -1634,6 +1796,36 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
         return; // Abort save
       }
 
+      // Runtime guard: Check if formula still exists (if we have a currentFormulaId)
+      if (currentFormulaId) {
+        const { data: existingFormula, error: checkError } = await getFormulaById(currentFormulaId);
+        if (checkError || !existingFormula) {
+          setIsSaving(false);
+          setSaveStatus('idle');
+          
+          // Reset builder to new empty formula state after deletion detected
+          setIngredients([]);
+          setBatchSize(100);
+          setUnitSize(50);
+          setProcedure("");
+          setNotes("");
+          setFormulaName("Untitled");
+          setProcessSteps([]);
+          setWorkflowStatus('draft');
+          setIsPinned(false);
+          setOrganizationNotes('');
+          setCurrentFormulaId(null);
+          setIsDirty(false);
+          setIsFormulaDeleted(false);
+          setLastSavedAt(null);
+          setSaveError(null);
+          setSavedAt(null);
+          setNotification(null);
+          
+          return;
+        }
+      }
+
       // Set saving status before starting the actual save operation
       setSaveStatus('saving');
 
@@ -1704,6 +1896,16 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
 
   const handleSaveAs = async () => {
     requireAuth(async () => {
+      // BUSINESS-1: Free vs Paid gate - block save for free users
+      if (!isPaidUser) {
+        setNotification({ 
+          type: 'error', 
+          message: 'Saving formulas is available on the paid plan.' 
+        });
+        setTimeout(() => setNotification(null), 5000);
+        return;
+      }
+
       setIsSaving(true);
       setSaveError(null);
       setNotification(null);
@@ -1790,6 +1992,257 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
     });
   };
 
+  const handlePrint = () => {
+    // Helper to get INCI name from ingredient
+    const getIngredientInci = (ingredient: Ingredient): string => {
+      // Try to find the ingredient in the full ingredient list
+      const allAvailableIngredients = [...allIngredients, ...customIngredients];
+      const fullIngredient = allAvailableIngredients.find(
+        (ing) => ing.name.toLowerCase() === ingredient.name.toLowerCase() || ing.id === ingredient.ingredientId
+      );
+      
+      // Use INCI if available, otherwise use name
+      if (fullIngredient?.inci) {
+        return fullIngredient.inci;
+      }
+      
+      // Try synonym map
+      if (synonymMap[ingredient.name]) {
+        return synonymMap[ingredient.name];
+      }
+      
+      // Fallback to name
+      return ingredient.name;
+    };
+
+    // Calculate total percentage
+    const totalPercentage = ingredients.reduce((sum, ing) => sum + (ing.percentage || 0), 0);
+
+    // Format date/time
+    const now = new Date();
+    const dateTime = now.toLocaleString();
+
+    // Build ingredients list HTML
+    const ingredientsList = ingredients
+      .map((ing) => {
+        const inci = getIngredientInci(ing);
+        const displayName = inci !== ing.name ? `${ing.name} (${inci})` : ing.name;
+        return `
+          <tr class="ingredient-row">
+            <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${displayName}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">${ing.percentage.toFixed(2)}%</td>
+          </tr>
+        `;
+      })
+      .join('');
+
+    // Get product type display
+    const productTypeDisplay = productType === 'leaveOn' ? 'Leave-On' : 'Rinse-Off';
+
+    // Generate HTML document
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Formula: ${formulaName}</title>
+  <style>
+    @media print {
+      @page {
+        margin: 1in;
+      }
+      body {
+        margin: 0;
+      }
+      /* Keep header block together */
+      .header-block {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      /* Keep ingredient rows together */
+      .ingredient-row {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      /* Keep table header with first row */
+      thead {
+        display: table-header-group;
+      }
+      tbody {
+        display: table-row-group;
+      }
+      /* Prevent disclaimer from being orphaned */
+      .disclaimer {
+        page-break-inside: avoid;
+        break-inside: avoid;
+        page-break-before: avoid;
+        break-before: avoid;
+      }
+      /* Keep total row with last ingredient */
+      .total-row {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      /* Keep compliance status block together */
+      .compliance-status {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #1f2937;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header-block {
+      margin-bottom: 24px;
+    }
+    h1 {
+      color: #0d9488;
+      font-size: 24px;
+      margin-bottom: 8px;
+      border-bottom: 2px solid #0d9488;
+      padding-bottom: 8px;
+    }
+    .metadata {
+      margin: 16px 0;
+      font-size: 14px;
+      color: #6b7280;
+    }
+    .metadata-row {
+      margin: 4px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+    }
+    th {
+      background-color: #f3f4f6;
+      padding: 12px 8px;
+      text-align: left;
+      font-weight: 600;
+      color: #374151;
+      border-bottom: 2px solid #d1d5db;
+    }
+    th:last-child {
+      text-align: right;
+    }
+    td {
+      padding: 8px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    td:last-child {
+      text-align: right;
+    }
+    .total-row {
+      font-weight: 600;
+      background-color: #f9fafb;
+      border-top: 2px solid #d1d5db;
+    }
+    .disclaimer {
+      margin-top: 48px;
+      padding: 16px;
+      background-color: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      font-size: 12px;
+      color: #92400e;
+      line-height: 1.5;
+    }
+    .disclaimer-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .compliance-status {
+      margin-top: 32px;
+      padding: 16px;
+      background-color: #f9fafb;
+      border-left: 4px solid #6b7280;
+      font-size: 14px;
+      color: #374151;
+      line-height: 1.6;
+    }
+    .compliance-status.blocked {
+      background-color: #fef2f2;
+      border-left-color: #dc2626;
+      color: #991b1b;
+    }
+    .compliance-status-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .compliance-status ul {
+      margin: 8px 0 0 0;
+      padding-left: 20px;
+    }
+    .compliance-status li {
+      margin: 4px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="header-block">
+    <h1>${formulaName || 'Untitled Formula'}</h1>
+    
+    <div class="metadata">
+      <div class="metadata-row"><strong>Date:</strong> ${dateTime}</div>
+      <div class="metadata-row"><strong>Product Type:</strong> ${productTypeDisplay}</div>
+      <div class="metadata-row"><strong>Batch Size:</strong> ${batchSize}g</div>
+      ${unitSize > 0 ? `<div class="metadata-row"><strong>Package Size:</strong> ${unitSize}ml/g</div>` : ''}
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Ingredient (INCI)</th>
+        <th>Percentage</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${ingredientsList}
+      <tr class="total-row">
+        <td><strong>Total</strong></td>
+        <td><strong>${totalPercentage.toFixed(2)}%</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="compliance-status ${hardFailReasons.length > 0 ? 'blocked' : ''}">
+    <div class="compliance-status-title">Compliance Status</div>
+    <div>
+      ${hardFailReasons.length === 0 
+        ? 'No blocking issues detected.' 
+        : `BLOCKED<br><ul>${hardFailReasons.map(reason => `<li>${reason}</li>`).join('')}</ul>`}
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    <div class="disclaimer-title">Disclaimer</div>
+    <div>This tool provides informational guidance and does not constitute legal advice. Users are responsible for ensuring compliance with all applicable regulations.</div>
+  </div>
+</body>
+</html>
+    `;
+
+    // Open new window and write HTML
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      
+      // Wait for content to load, then trigger print
+      // Use a small delay to ensure DOM is ready
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 250);
+    }
+  };
+
   return (
     <div className="w-full max-w-full md:max-w-6xl mx-auto px-4 md:px-6">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-10">
@@ -1813,6 +2266,19 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                   <X className="w-4 h-4" />
                 </button>
               </div>
+            </div>
+          )}
+          
+          {/* Onboarding Hint for Free Users */}
+          {user && !isPaidUser && (
+            <div className="mb-4 px-3 py-2 rounded-md border border-gray-200 bg-gray-50">
+              <p className="text-xs text-gray-600">
+                <Info className="w-3 h-3 inline mr-1.5 text-gray-500" />
+                Tip: You can Print/PDF export your formula anytime. Saving & dashboard access are available on Pro.{" "}
+                <Link href="/pricing" className="text-teal-600 hover:text-teal-700 underline">
+                  View plans
+                </Link>
+              </p>
             </div>
           )}
           
@@ -1890,7 +2356,8 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
               <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto justify-end">
                 <button
                   onClick={handleCloudSave}
-                  disabled={isSaving}
+                  disabled={isSaving || isFormulaDeleted || !isPaidUser}
+                  title={!isPaidUser ? "Upgrade to the paid plan to enable saving." : undefined}
                   className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSaving ? (
@@ -1924,18 +2391,44 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                     Saved at {savedAt}
                   </span>
                 )}
+                {isFormulaDeleted && (
+                  <div className="mt-2 text-sm text-red-600 leading-relaxed">
+                    This formula no longer exists.
+                  </div>
+                )}
                 {hasHardFail && (
                   <div className="mt-2 text-sm text-red-600 leading-relaxed">
                     Cannot save: {hardFailReasons.join('; ')}.
                   </div>
                 )}
+                {!isPaidUser && (
+                  <div className="mt-2 text-sm text-gray-600 leading-relaxed">
+                    Saving formulas is available on the paid plan. Upgrade to enable Save & Save As.{" "}
+                    <Link href="/pricing" className="text-teal-600 hover:text-teal-700 underline">
+                      View plans
+                    </Link>
+                  </div>
+                )}
+                {showUpgradeSuccess && (
+                  <div className="mt-2 text-sm text-green-600 leading-relaxed">
+                    Pro activated ✓
+                  </div>
+                )}
                 <button
                   onClick={handleSaveAs}
-                  disabled={isSaving}
+                  disabled={isSaving || !isPaidUser}
+                  title={!isPaidUser ? "Upgrade to the paid plan to enable saving." : undefined}
                   className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <FilePlus className="w-4 h-4" />
                   Save As…
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium whitespace-nowrap"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print / PDF
                 </button>
                 <button
                   onClick={() => requireAuth(() => setShowLoadModal(true))}
@@ -2196,9 +2689,17 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
         )}
 
         {ingredients.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            <p className="mb-4">No ingredients added yet.</p>
-            <p className="text-sm">Click "Add Ingredient" to get started.</p>
+          <div className="text-center py-12 px-4">
+            <div className="max-w-md mx-auto">
+              <p className="mb-2 text-gray-700 font-medium">Start by adding ingredients, or load an example formula to see how it works.</p>
+              <button
+                onClick={loadExampleFormula}
+                className="mt-4 px-6 py-2.5 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors font-medium inline-flex items-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                Load example formula
+              </button>
+            </div>
           </div>
         ) : (
           <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">

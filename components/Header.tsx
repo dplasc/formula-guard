@@ -80,7 +80,23 @@ export default function Header({ hasUnsavedChanges = false }: HeaderProps) {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">FormulaGuard</h1>
-                <p className="text-sm text-gray-600">Natural Cosmetics Formulation Platform</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-gray-600">Natural Cosmetics Formulation Platform</p>
+                  {user && (
+                    <>
+                      <span className="text-xs text-gray-400">•</span>
+                      <span className="text-xs text-gray-500">Beta</span>
+                      <span className="text-xs text-gray-400">•</span>
+                      <a
+                        href="mailto:info@formulaguard.com"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs text-gray-500 hover:text-teal-600 transition-colors"
+                      >
+                        Send feedback
+                      </a>
+                    </>
+                  )}
+                </div>
               </div>
             </Link>
             
