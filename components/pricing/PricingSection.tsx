@@ -77,7 +77,7 @@ export default function PricingSection({ isPaidUser }: PricingSectionProps) {
               <tr className="border-b border-gray-100">
                 <td className="py-3 px-4 text-gray-700">Compliance checks (EU, IFRA)</td>
                 <td className="py-3 px-4 text-center">
-                  <span className="text-teal-600 font-semibold">✓</span>
+                  <span className="text-gray-400">—</span>
                 </td>
                 <td className="py-3 px-4 text-center bg-teal-50">
                   <span className="text-teal-600 font-semibold">✓</span>
@@ -86,7 +86,7 @@ export default function PricingSection({ isPaidUser }: PricingSectionProps) {
               <tr className="border-b border-gray-100">
                 <td className="py-3 px-4 text-gray-700">Print/PDF export</td>
                 <td className="py-3 px-4 text-center">
-                  <span className="text-teal-600 font-semibold">✓</span>
+                  <span className="text-gray-400">—</span>
                 </td>
                 <td className="py-3 px-4 text-center bg-teal-50">
                   <span className="text-teal-600 font-semibold">✓</span>
@@ -113,6 +113,9 @@ export default function PricingSection({ isPaidUser }: PricingSectionProps) {
             </tbody>
           </table>
         </div>
+        <p className="mt-4 text-sm text-gray-600 text-center">
+          Free is for testing. Compliance and exports require Pro.
+        </p>
       </section>
 
       {/* CTA Section */}

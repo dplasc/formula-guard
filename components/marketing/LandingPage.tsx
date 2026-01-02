@@ -6,6 +6,8 @@ import { Beaker, Shield, FileText, Info } from 'lucide-react';
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
 import DemoModal from './DemoModal';
+import HomePricingSection from './HomePricingSection';
+import HomeTrustSection from './HomeTrustSection';
 import type { SocialLinks } from '@/lib/siteSettings';
 
 interface LandingPageProps {
@@ -152,6 +154,12 @@ export default function LandingPage({ socialLinks }: LandingPageProps) {
           </div>
         </div>
       </section>
+
+      {/* Pricing Section */}
+      <HomePricingSection />
+
+      {/* Trust & Legal Section */}
+      <HomeTrustSection />
 
       {/* Newsletter Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
