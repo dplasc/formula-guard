@@ -37,9 +37,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2024-11-20.acacia',
-    });
+    const stripe = new Stripe(stripeSecretKey);
 
     // 3. Check for stored Stripe customer ID first
     const storedCustomerId = user.app_metadata?.stripe_customer_id as string | undefined;
