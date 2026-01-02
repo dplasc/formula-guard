@@ -14,6 +14,8 @@ export const metadata = buildMetadata({
   path: "/pricing",
 });
 
+export const dynamic = 'force-dynamic';
+
 export default async function PricingPage() {
   const socialLinks = await getSocialLinks();
   const stripeCheckoutUrl = process.env.NEXT_PUBLIC_STRIPE_CHECKOUT_URL;
