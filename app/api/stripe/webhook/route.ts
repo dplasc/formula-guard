@@ -146,10 +146,10 @@ export async function POST(request: NextRequest) {
       }
 
       // Extract Stripe customer ID from session
-      const customerId = 
-        (typeof session.customer === 'string' ? session.customer : session.customer?.id) ||
-        session.customer_id ||
-        null;
+      const customerId =
+        typeof session.customer === 'string'
+          ? session.customer
+          : session.customer?.id ?? null;
 
       // Update user plan to pro (and store customer ID if available)
       const normalizedEmail = email.trim().toLowerCase();
