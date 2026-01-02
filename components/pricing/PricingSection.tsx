@@ -118,6 +118,34 @@ export default function PricingSection({ isPaidUser }: PricingSectionProps) {
         </p>
       </section>
 
+      {/* Pro Qualifier Section */}
+      <section className="border-t border-gray-200 pt-8">
+        <h3 className="text-xl font-semibold text-gray-900 mb-4">
+          Who is FormulaGuard Pro for?
+        </h3>
+        <ul className="space-y-3 mb-4 max-w-2xl">
+          <li className="flex items-start">
+            <span className="text-teal-600 mr-3 mt-1">•</span>
+            <span className="text-gray-700">You sell cosmetic products or formulations</span>
+          </li>
+          <li className="flex items-start">
+            <span className="text-teal-600 mr-3 mt-1">•</span>
+            <span className="text-gray-700">You need compliance checks (EU, IFRA) you can rely on</span>
+          </li>
+          <li className="flex items-start">
+            <span className="text-teal-600 mr-3 mt-1">•</span>
+            <span className="text-gray-700">You export, share, or document formulas (PDF / print)</span>
+          </li>
+          <li className="flex items-start">
+            <span className="text-teal-600 mr-3 mt-1">•</span>
+            <span className="text-gray-700">You want to save, manage, and reuse formulas professionally</span>
+          </li>
+        </ul>
+        <p className="text-sm text-gray-500 mt-4">
+          Free is ideal for testing and learning. Pro is required for real-world compliance and exports.
+        </p>
+      </section>
+
       {/* CTA Section */}
       <section className="border-t border-gray-200 pt-8">
         <div className="flex flex-col items-center gap-3">
