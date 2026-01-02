@@ -6,14 +6,30 @@ import { createClient } from '@/lib/supabase/server';
  * POST /api/stripe/checkout
  * Creates a Stripe Checkout Session in TEST mode
  * // TEST MODE – checkout temporarily enabled for verification
+ * 
+ * Request body (optional):
+ * - plan: 'monthly' | 'yearly' (defaults to 'monthly' if not provided)
  */
 export async function POST(request: NextRequest) {
   try {
-    // 1. Authenticate user (optional for checkout, but recommended)
+    // 1. Parse request body for plan selection
+    let plan: 'monthly' | 'yearly' = 'monthly';
+    try {
+      const body = await request.json();
+      if (body.plan === 'yearly') {
+        plan = 'yearly';
+      }
+      // Default to 'monthly' for any other value or if not provided
+    } catch {
+      // If body parsing fails, default to monthly (backward compatibility)
+      plan = 'monthly';
+    }
+
+    // 2. Authenticate user (optional for checkout, but recommended)
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     
-    // 2. Initialize Stripe client with TEST secret key
+    // 3. Initialize Stripe client with TEST secret key
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeSecretKey) {
       console.error('STRIPE_SECRET_KEY is not set');
@@ -25,27 +41,31 @@ export async function POST(request: NextRequest) {
 
     const stripe = new Stripe(stripeSecretKey);
 
-    // 3. Get site URL for success/cancel redirects
+    // 4. Get price ID based on plan selection
+    const priceId = plan === 'yearly' 
+      ? process.env.STRIPE_PRICE_PRO_YEARLY
+      : process.env.STRIPE_PRICE_PRO_MONTHLY;
+
+    if (!priceId) {
+      const missingVar = plan === 'yearly' ? 'STRIPE_PRICE_PRO_YEARLY' : 'STRIPE_PRICE_PRO_MONTHLY';
+      console.error(`${missingVar} is not set`);
+      return NextResponse.json(
+        { error: `Stripe price ID not configured for ${plan} plan` },
+        { status: 500 }
+      );
+    }
+
+    // 5. Get site URL for success/cancel redirects
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'http://localhost:3000';
     
-    // 4. Create Checkout Session in TEST mode
+    // 6. Create Checkout Session in TEST mode
     // TEST MODE – checkout temporarily enabled for verification
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [
         {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'FormulaGuard Pro',
-              description: 'Pro plan with save/load formulas and dashboard management',
-            },
-            unit_amount: 999, // $9.99 in cents (TEST mode)
-            recurring: {
-              interval: 'month',
-            },
-          },
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -55,6 +75,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         user_id: user?.id || '',
         email: user?.email || '',
+        plan: plan, // Store plan selection in metadata
       },
     });
 
