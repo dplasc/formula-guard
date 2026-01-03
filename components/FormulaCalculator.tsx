@@ -2282,8 +2282,8 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
             </div>
           )}
           
-          {/* Header Grid - Clean 4-column layout */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          {/* Header Grid - Clean 3-column layout */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
             {/* Column 1: Formula Name */}
             <div className="flex flex-col gap-1 min-w-0">
               <div className="flex items-center justify-between">
@@ -2347,113 +2347,112 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                 className="w-full px-3 py-2 h-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               />
             </div>
-            
-            {/* Column 4: Actions */}
-            <div className="flex flex-col gap-1 items-end min-w-0 relative">
-              <label className="text-sm font-medium text-gray-700">
-                Actions
-              </label>
-              {isPaidUser ? (
-                <>
-                  <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto justify-end">
-                    <button
-                      onClick={handleCloudSave}
-                      disabled={isSaving || isFormulaDeleted || !isPaidUser}
-                      title={!isPaidUser ? "Upgrade to the paid plan to enable saving." : undefined}
-                      className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isSaving ? (
-                        <>
-                          <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Cloud className="w-4 h-4" />
-                          Save
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={handleSaveAs}
-                      disabled={isSaving || !isPaidUser}
-                      title={!isPaidUser ? "Upgrade to the paid plan to enable saving." : undefined}
-                      className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <FilePlus className="w-4 h-4" />
-                      Save As…
-                    </button>
-                    <button
-                      onClick={handlePrint}
-                      className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium whitespace-nowrap"
-                    >
-                      <Printer className="w-4 h-4" />
-                      Print / PDF
-                    </button>
-                    <button
-                      onClick={() => requireAuth(() => setShowLoadModal(true))}
-                      className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-white border-2 border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition-colors font-medium whitespace-nowrap"
-                    >
-                      <FolderOpen className="w-4 h-4" />
-                      Load
-                    </button>
-                  </div>
-                  <div className="flex flex-col items-end gap-1 mt-1">
-                    {saveStatus !== 'idle' && (
-                      <span className={`text-sm flex items-center ${
-                        saveStatus === 'saving' ? 'text-gray-500' :
-                        saveStatus === 'saved' ? 'text-green-600' :
-                        'text-red-600'
-                      }`}>
-                        {saveStatus === 'saving' && 'Saving…'}
-                        {saveStatus === 'saved' && 'Saved ✓'}
-                        {saveStatus === 'error' && 'Error saving formula'}
-                      </span>
+          </div>
+
+          {/* Actions Row - Full width, right-aligned on desktop */}
+          <div className="flex flex-col gap-2 mt-4">
+            <label className="text-sm font-medium text-gray-700">
+              Actions
+            </label>
+            {isPaidUser ? (
+              <div className="flex flex-col items-end gap-2">
+                {/* All buttons on one line, right-aligned */}
+                <div className="flex flex-wrap justify-end gap-2 max-w-full w-full">
+                  <button
+                    onClick={() => requireAuth(() => setShowLoadModal(true))}
+                    className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-white border-2 border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition-colors font-medium whitespace-nowrap"
+                  >
+                    <FolderOpen className="w-4 h-4" />
+                    Load
+                  </button>
+                  <button
+                    onClick={handleSaveAs}
+                    disabled={isSaving || !isPaidUser}
+                    title={!isPaidUser ? "Upgrade to the paid plan to enable saving." : undefined}
+                    className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <FilePlus className="w-4 h-4" />
+                    Save As…
+                  </button>
+                  <button
+                    onClick={handlePrint}
+                    className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium whitespace-nowrap"
+                  >
+                    <Printer className="w-4 h-4" />
+                    Print / PDF
+                  </button>
+                  <button
+                    onClick={handleCloudSave}
+                    disabled={isSaving || isFormulaDeleted || !isPaidUser}
+                    title={!isPaidUser ? "Upgrade to the paid plan to enable saving." : undefined}
+                    className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSaving ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Cloud className="w-4 h-4" />
+                        Save
+                      </>
                     )}
-                    {savedAt && (
-                      <span className="text-sm text-gray-500">
-                        Saved at {savedAt}
-                      </span>
-                    )}
-                    {isFormulaDeleted && (
-                      <div className="text-sm text-red-600 leading-relaxed">
-                        This formula no longer exists.
-                      </div>
-                    )}
-                    {hasHardFail && (
-                      <div className="text-sm text-red-600 leading-relaxed">
-                        Cannot save: {hardFailReasons.join('; ')}.
-                      </div>
-                    )}
-                    {showUpgradeSuccess && (
-                      <div className="text-sm text-green-600 leading-relaxed">
-                        Pro activated ✓
-                      </div>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="w-full sm:w-auto">
-                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-700">
-                    <p className="mb-2">
-                      Saving, loading and exporting formulas are available on the Pro plan.
-                    </p>
-                    <Link href="/pricing" className="inline-flex items-center text-teal-600 hover:text-teal-700 font-medium underline">
-                      View plans
-                    </Link>
-                  </div>
+                  </button>
                 </div>
-              )}
-              {/* Status Badge - Absolutely positioned below buttons */}
-              <div className="absolute top-full right-0 mt-1 flex justify-end">
-                <span className={`text-xs ${isDirty ? 'text-amber-600' : 'text-gray-500'}`}>
-                  {isDirty ? '● Unsaved changes' : 'Saved'}
-                </span>
+                {/* Status messages below buttons, right-aligned */}
+                <div className="flex flex-col items-end gap-1 w-full">
+                  {saveStatus !== 'idle' && (
+                    <span className={`text-sm flex items-center ${
+                      saveStatus === 'saving' ? 'text-gray-500' :
+                      saveStatus === 'saved' ? 'text-green-600' :
+                      'text-red-600'
+                    }`}>
+                      {saveStatus === 'saving' && 'Saving…'}
+                      {saveStatus === 'saved' && 'Saved ✓'}
+                      {saveStatus === 'error' && 'Error saving formula'}
+                    </span>
+                  )}
+                  {savedAt && (
+                    <span className="text-sm text-gray-500">
+                      Saved at {savedAt}
+                    </span>
+                  )}
+                  {isFormulaDeleted && (
+                    <div className="text-sm text-red-600 leading-relaxed">
+                      This formula no longer exists.
+                    </div>
+                  )}
+                  {hasHardFail && (
+                    <div className="text-sm text-red-600 leading-relaxed">
+                      Cannot save: {hardFailReasons.join('; ')}.
+                    </div>
+                  )}
+                  {showUpgradeSuccess && (
+                    <div className="text-sm text-green-600 leading-relaxed">
+                      Pro activated ✓
+                    </div>
+                  )}
+                  <span className={`text-xs ${isDirty ? 'text-amber-600' : 'text-gray-500'}`}>
+                    {isDirty ? '● Unsaved changes' : 'Saved'}
+                  </span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="w-full sm:w-auto">
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-700">
+                  <p className="mb-2">
+                    Saving, loading and exporting formulas are available on the Pro plan.
+                  </p>
+                  <Link href="/pricing" className="inline-flex items-center text-teal-600 hover:text-teal-700 font-medium underline">
+                    View plans
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Organization Fields Row */}
