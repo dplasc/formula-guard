@@ -3,6 +3,7 @@ import { getFormulas } from './actions';
 import EmptyState from '@/components/dashboard/EmptyState';
 import FormulaList from '@/components/dashboard/FormulaList';
 import Header from '@/components/Header';
+import ErrorBanner from '@/components/dashboard/ErrorBanner';
 
 export default async function DashboardPage() {
   const { data, error } = await getFormulas();
@@ -12,6 +13,8 @@ export default async function DashboardPage() {
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12">
+        <ErrorBanner />
+
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Formula Library</h1>

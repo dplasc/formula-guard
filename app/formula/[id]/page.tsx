@@ -20,8 +20,7 @@ export default async function FormulaPage({
     // Log technical error for debugging
     console.error(error);
     // Redirect to dashboard if formula not found or access denied
-    // User-friendly message: "Couldn't load formula. Please try again."
-    redirect('/dashboard');
+    redirect('/dashboard?error=load_formula');
   }
 
   // Transform formula data to match builder's expected format
