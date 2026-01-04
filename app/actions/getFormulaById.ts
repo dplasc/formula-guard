@@ -5,39 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 export type Formula = {
   id: string;
   name: string;
-  product_type: 'leaveOn' | 'rinseOff';
-  batch_size: number | null;
-  formula_data: {
-    ingredients: Array<{
-      id: string;
-      name: string;
-      percentage: number;
-      maxUsage?: number;
-      description?: string;
-      ingredientId?: string;
-      phase: string;
-      pricePerKg?: number;
-      isPremium?: boolean;
-      isCustom?: boolean;
-    }>;
-    batchSize: number;
-    unitSize?: number;
-    procedure: string;
-    notes: string;
-    processSteps?: Array<{
-      id: string;
-      order: number;
-      title: string;
-      description?: string;
-      phase?: string;
-      tempC?: number | null;
-      timeMin?: number | null;
-      notes?: string;
-    }>;
-    total?: number;
-    totalBatchCost?: number;
-    costPerUnit?: number;
-  };
+  data: any;
   updated_at: string;
 };
 
@@ -57,7 +25,7 @@ export async function getFormulaById(id: string): Promise<{ data: Formula | null
   // Query formula by ID for the current user (RLS ensures user can only access their own formulas)
   const { data, error } = await supabase
     .from('formulas')
-    .select('id, name, product_type, batch_size, formula_data, updated_at')
+    .select('id, name, data, updated_at')
     .eq('id', id)
     .eq('user_id', user.id)
     .single();

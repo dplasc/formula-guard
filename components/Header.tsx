@@ -87,13 +87,17 @@ export default function Header({ hasUnsavedChanges = false }: HeaderProps) {
                       <span className="text-xs text-gray-400">•</span>
                       <span className="text-xs text-gray-500">Beta</span>
                       <span className="text-xs text-gray-400">•</span>
-                      <a
-                        href="mailto:info@formulaguard.com"
-                        onClick={(e) => e.stopPropagation()}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.location.href = "mailto:info@formulaguard.com";
+                        }}
                         className="text-xs text-gray-500 hover:text-teal-600 transition-colors"
+                        aria-label="Send feedback to info@formulaguard.com"
                       >
                         Send feedback
-                      </a>
+                      </button>
                     </>
                   )}
                 </div>

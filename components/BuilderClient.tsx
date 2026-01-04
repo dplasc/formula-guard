@@ -66,16 +66,17 @@ function BuilderContent({ initialFormulaId: propFormulaId, initialFormulaData: p
             setFormulaId(null);
             setFormulaData(null);
           } else if (result.data) {
+            const d = (result.data as any).data ?? {};
             setFormulaId(result.data.id);
             setFormulaData({
               id: result.data.id,
               name: result.data.name,
-              ingredients: result.data.formula_data.ingredients || [],
-              batchSize: result.data.formula_data.batchSize || result.data.batch_size || 100,
-              unitSize: result.data.formula_data.unitSize,
-              procedure: result.data.formula_data.procedure || '',
-              notes: result.data.formula_data.notes || '',
-              processSteps: result.data.formula_data.processSteps || [],
+              ingredients: Array.isArray(d.ingredients) ? d.ingredients : [],
+              batchSize: d.batchSize ?? 100,
+              unitSize: d.unitSize,
+              procedure: d.procedure || '',
+              notes: d.notes || '',
+              processSteps: d.processSteps || [],
             });
           }
         })
