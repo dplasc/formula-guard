@@ -2020,6 +2020,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
       const promptName = prompt('Enter a name for the new formula:', defaultName);
       if (!promptName || !promptName.trim()) {
         setIsSaving(false);
+        setSaveStatus('idle');
         return; // User cancelled
       }
       const nameToSave = promptName.trim();
@@ -2029,6 +2030,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
       const hasNegativePercentage = ingredients.some(ing => ing.percentage < 0);
       if (hasNegativePercentage) {
         setIsSaving(false);
+        setSaveStatus('idle');
         setIsDirty(true);
         setNotification({ 
           type: 'error', 
@@ -2041,6 +2043,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
       // Check for exact 100% total
       if (Math.abs(total - 100) > 0.01) {
         setIsSaving(false);
+        setSaveStatus('idle');
         setIsDirty(true);
         setNotification({ 
           type: 'error', 
@@ -2049,6 +2052,9 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
         setTimeout(() => setNotification(null), 5000);
         return;
       }
+
+      // Set saving status before starting the actual save operation
+      setSaveStatus('saving');
 
       try {
         // Prepare the formula data to save
@@ -2078,15 +2084,27 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
           setIsDirty(false);
           setLastSavedAt(new Date());
           setSaveError(null);
+          setSaveStatus('saved');
           setNotification({ type: 'success', message: 'Saved' });
           setTimeout(() => setNotification(null), 3000);
+          // Reset save status after 2 seconds
+          setTimeout(() => setSaveStatus('idle'), 2000);
         } else {
           throw new Error('Save As operation completed but no formula ID was returned');
         }
-      } catch (error) {
+      } catch (error: any) {
+        // Extract error message safely
+        const errorMessage =
+          error?.message ??
+          error?.error?.message ??
+          error?.statusText ??
+          (typeof error === 'string' ? error : null) ??
+          'Failed to save';
+        
         console.error("Error saving formula:", error);
         setIsDirty(true);
-        setSaveError('Failed to save');
+        setSaveError(errorMessage);
+        setSaveStatus('error');
         setNotification({ type: 'error', message: 'Failed to save. Please check your connection.' });
         setTimeout(() => setNotification(null), 5000);
       } finally {
