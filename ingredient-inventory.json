@@ -1,0 +1,425 @@
+{
+  "generatedAt": "2026-01-03T18:06:15.652Z",
+  "summary": {
+    "totalIngredients": 31,
+    "totalCategories": 11,
+    "uncategorizedCount": 0
+  },
+  "categories": [
+    {
+      "name": "Chelators",
+      "count": 1,
+      "ingredients": [
+        {
+          "inci": "Disodium EDTA",
+          "category": "Chelators",
+          "default_max_leave_on": 0.2,
+          "default_max_rinse_off": 0.2,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        }
+      ]
+    },
+    {
+      "name": "Emulsifiers",
+      "count": 5,
+      "ingredients": [
+        {
+          "inci": "Ceteareth-20",
+          "category": "Emulsifiers",
+          "default_max_leave_on": 3,
+          "default_max_rinse_off": 6,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Cetearyl Alcohol",
+          "category": "Emulsifiers",
+          "default_max_leave_on": 5,
+          "default_max_rinse_off": 8,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Glyceryl Stearate",
+          "category": "Emulsifiers",
+          "default_max_leave_on": 5,
+          "default_max_rinse_off": 8,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Lecithin",
+          "category": "Emulsifiers",
+          "default_max_leave_on": 3,
+          "default_max_rinse_off": 5,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Polysorbate 20",
+          "category": "Emulsifiers",
+          "default_max_leave_on": 3,
+          "default_max_rinse_off": 5,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        }
+      ]
+    },
+    {
+      "name": "Essential Oils",
+      "count": 4,
+      "ingredients": [
+        {
+          "inci": "Citrus Aurantium Dulcis Peel Oil",
+          "category": "Essential Oils",
+          "default_max_leave_on": 0.2,
+          "default_max_rinse_off": 0.5,
+          "is_fragrance_component": true,
+          "ifra_certificate_required": true,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Citrus Limon Peel Oil",
+          "category": "Essential Oils",
+          "default_max_leave_on": 0.2,
+          "default_max_rinse_off": 0.5,
+          "is_fragrance_component": true,
+          "ifra_certificate_required": true,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Lavandula Angustifolia Oil",
+          "category": "Essential Oils",
+          "default_max_leave_on": 0.2,
+          "default_max_rinse_off": 0.5,
+          "is_fragrance_component": true,
+          "ifra_certificate_required": true,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Mentha Piperita Oil",
+          "category": "Essential Oils",
+          "default_max_leave_on": 0.1,
+          "default_max_rinse_off": 0.3,
+          "is_fragrance_component": true,
+          "ifra_certificate_required": true,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        }
+      ]
+    },
+    {
+      "name": "Fragrance",
+      "count": 1,
+      "ingredients": [
+        {
+          "inci": "Parfum",
+          "category": "Fragrance",
+          "default_max_leave_on": 0.3,
+          "default_max_rinse_off": 0.8,
+          "is_fragrance_component": true,
+          "ifra_certificate_required": true,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        }
+      ]
+    },
+    {
+      "name": "Humectants",
+      "count": 4,
+      "ingredients": [
+        {
+          "inci": "Butylene Glycol",
+          "category": "Humectants",
+          "default_max_leave_on": 5,
+          "default_max_rinse_off": 5,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Glycerin",
+          "category": "Humectants",
+          "default_max_leave_on": 10,
+          "default_max_rinse_off": 5,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Panthenol",
+          "category": "Humectants",
+          "default_max_leave_on": 3,
+          "default_max_rinse_off": 5,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Propylene Glycol",
+          "category": "Humectants",
+          "default_max_leave_on": 5,
+          "default_max_rinse_off": 5,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        }
+      ]
+    },
+    {
+      "name": "Oils & Butters",
+      "count": 4,
+      "ingredients": [
+        {
+          "inci": "Butyrospermum Parkii Butter",
+          "category": "Oils & Butters",
+          "default_max_leave_on": 20,
+          "default_max_rinse_off": 5,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Cocos Nucifera Oil",
+          "category": "Oils & Butters",
+          "default_max_leave_on": 15,
+          "default_max_rinse_off": 5,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Prunus Amygdalus Dulcis Oil",
+          "category": "Oils & Butters",
+          "default_max_leave_on": 20,
+          "default_max_rinse_off": 5,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Simmondsia Chinensis Seed Oil",
+          "category": "Oils & Butters",
+          "default_max_leave_on": 15,
+          "default_max_rinse_off": 5,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        }
+      ]
+    },
+    {
+      "name": "Preservatives",
+      "count": 5,
+      "ingredients": [
+        {
+          "inci": "Benzyl Alcohol",
+          "category": "Preservatives",
+          "default_max_leave_on": 0.5,
+          "default_max_rinse_off": 1,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Dehydroacetic Acid",
+          "category": "Preservatives",
+          "default_max_leave_on": 0.6,
+          "default_max_rinse_off": 0.6,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Phenoxyethanol",
+          "category": "Preservatives",
+          "default_max_leave_on": 0.8,
+          "default_max_rinse_off": 1,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Potassium Sorbate",
+          "category": "Preservatives",
+          "default_max_leave_on": 0.5,
+          "default_max_rinse_off": 1,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Sodium Benzoate",
+          "category": "Preservatives",
+          "default_max_leave_on": 0.5,
+          "default_max_rinse_off": 1,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        }
+      ]
+    },
+    {
+      "name": "Surfactants",
+      "count": 3,
+      "ingredients": [
+        {
+          "inci": "Cocamidopropyl Betaine",
+          "category": "Surfactants",
+          "default_max_leave_on": 1,
+          "default_max_rinse_off": 10,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Decyl Glucoside",
+          "category": "Surfactants",
+          "default_max_leave_on": 2,
+          "default_max_rinse_off": 10,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Sodium Laureth Sulfate",
+          "category": "Surfactants",
+          "default_max_leave_on": 1,
+          "default_max_rinse_off": 15,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        }
+      ]
+    },
+    {
+      "name": "Thickeners",
+      "count": 2,
+      "ingredients": [
+        {
+          "inci": "Carbomer",
+          "category": "Thickeners",
+          "default_max_leave_on": 1,
+          "default_max_rinse_off": 1,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        },
+        {
+          "inci": "Xanthan Gum",
+          "category": "Thickeners",
+          "default_max_leave_on": 1,
+          "default_max_rinse_off": 2,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        }
+      ]
+    },
+    {
+      "name": "Water Phase",
+      "count": 1,
+      "ingredients": [
+        {
+          "inci": "Aqua",
+          "category": "Water Phase",
+          "default_max_leave_on": 100,
+          "default_max_rinse_off": 100,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        }
+      ]
+    },
+    {
+      "name": "pH Adjusters",
+      "count": 1,
+      "ingredients": [
+        {
+          "inci": "Citric Acid",
+          "category": "pH Adjusters",
+          "default_max_leave_on": 0.3,
+          "default_max_rinse_off": 0.5,
+          "is_fragrance_component": false,
+          "ifra_certificate_required": false,
+          "allergens": null,
+          "has_notes": true,
+          "has_source_urls": true
+        }
+      ]
+    }
+  ],
+  "uncategorized": [],
+  "statistics": {
+    "fragrance_components": 5,
+    "ifra_certificate_required": 5,
+    "contains_allergens": 0,
+    "has_leave_on_limit": 31,
+    "has_rinse_off_limit": 31
+  }
+}

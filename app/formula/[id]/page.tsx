@@ -22,15 +22,16 @@ export default async function FormulaPage({
   }
 
   // Transform formula data to match builder's expected format
+  const d = (formula as any).data ?? {};
   const initialFormulaData = {
     id: formula.id,
     name: formula.name,
-    ingredients: formula.formula_data.ingredients || [],
-    batchSize: formula.formula_data.batchSize || formula.batch_size || 100,
-    unitSize: formula.formula_data.unitSize,
-    procedure: formula.formula_data.procedure || '',
-    notes: formula.formula_data.notes || '',
-    processSteps: formula.formula_data.processSteps || [],
+    ingredients: Array.isArray(d.ingredients) ? d.ingredients : [],
+    batchSize: d.batchSize ?? 100,
+    unitSize: d.unitSize,
+    procedure: d.procedure || '',
+    notes: d.notes || '',
+    processSteps: d.processSteps || [],
   };
 
   return <BuilderClient initialFormulaId={formula.id} initialFormulaData={initialFormulaData} />;
