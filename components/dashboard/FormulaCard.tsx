@@ -63,11 +63,14 @@ function getTechnicalStatusBadgeStyles(status: string) {
 }
 
 function calculateTechnicalStatus(formula: FormulaListItem): string {
-  if (!formula.data?.ingredients || formula.data.ingredients.length === 0) {
+  const d = formula.data ?? {};
+  const ingredients = Array.isArray((d as any).ingredients) ? (d as any).ingredients : [];
+  
+  if (ingredients.length === 0) {
     return 'INCOMPLETE';
   }
   
-  const total = formula.data.ingredients.reduce((sum, ing) => sum + (ing.percentage || 0), 0);
+  const total = ingredients.reduce((sum: number, ing: any) => sum + (Number(ing?.percentage) || 0), 0);
   
   if (total > 100) return 'INVALID';
   if (total < 100) return 'INCOMPLETE';
@@ -94,7 +97,8 @@ export default function FormulaCard({ formula, onDelete, onDuplicate }: FormulaC
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
   
-  const productTypeStyles = getProductTypeStyles(formula.product_type || '');
+  const d = formula.data ?? {};
+  const productTypeStyles = getProductTypeStyles(d.productType || d.product_type || '');
   const technicalStatus = calculateTechnicalStatus(formula);
   const technicalStatusStyles = getTechnicalStatusBadgeStyles(technicalStatus);
   const formattedDate = formatDate(formula.updated_at);
@@ -160,8 +164,8 @@ export default function FormulaCard({ formula, onDelete, onDuplicate }: FormulaC
         
         <div className="mb-3">
           <p className="text-sm text-gray-500">Updated: {formattedDate}</p>
-          {formula.batch_size && (
-            <p className="text-xs text-gray-400 mt-1">Batch size: {formula.batch_size}g</p>
+          {d.batchSize && (
+            <p className="text-xs text-gray-400 mt-1">Batch size: {d.batchSize}g</p>
           )}
           <span
             className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mt-2 ${technicalStatusStyles.bg} ${technicalStatusStyles.text}`}
