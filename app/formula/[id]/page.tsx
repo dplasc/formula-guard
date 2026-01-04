@@ -17,7 +17,10 @@ export default async function FormulaPage({
   const { data: formula, error } = await getFormulaById(id);
 
   if (error || !formula) {
+    // Log technical error for debugging
+    console.error(error);
     // Redirect to dashboard if formula not found or access denied
+    // User-friendly message: "Couldn't load formula. Please try again."
     redirect('/dashboard');
   }
 
