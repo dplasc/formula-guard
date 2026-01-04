@@ -7,9 +7,7 @@ import { revalidatePath } from 'next/cache';
 export type FormulaInput = {
   id?: string;
   name: string;
-  product_type: 'leaveOn' | 'rinseOff';
-  batch_size?: number | null;
-  formula_data: any; // Full formula state snapshot (ingredients, processSteps, etc.)
+  data: any; // Full formula state snapshot (ingredients, processSteps, etc.) as JSONB
 };
 
 export async function saveFormula(input: FormulaInput) {
@@ -22,18 +20,18 @@ export async function saveFormula(input: FormulaInput) {
   }
 
   // Validate JSON structure for jsonb column
-  let validatedFormulaData = input.formula_data;
+  let validatedFormulaData = input.data;
   try {
-    // Ensure formula_data is a valid JSON-serializable object
-    if (typeof input.formula_data === 'string') {
-      validatedFormulaData = JSON.parse(input.formula_data);
-    } else if (typeof input.formula_data !== 'object' || input.formula_data === null) {
-      throw new Error('formula_data must be a valid JSON object');
+    // Ensure data is a valid JSON-serializable object
+    if (typeof input.data === 'string') {
+      validatedFormulaData = JSON.parse(input.data);
+    } else if (typeof input.data !== 'object' || input.data === null) {
+      throw new Error('data must be a valid JSON object');
     }
     // Test serialization
     JSON.stringify(validatedFormulaData);
   } catch (jsonError) {
-    const errorMsg = `Invalid JSON structure in formula_data: ${jsonError instanceof Error ? jsonError.message : 'Unknown error'}`;
+    const errorMsg = `Invalid JSON structure in data: ${jsonError instanceof Error ? jsonError.message : 'Unknown error'}`;
     throw new Error(`Invalid formula data structure: ${errorMsg}`);
   }
 
@@ -41,16 +39,12 @@ export async function saveFormula(input: FormulaInput) {
   const payload: {
     id?: string;
     name: string;
-    product_type: 'leaveOn' | 'rinseOff';
-    batch_size?: number | null;
-    formula_data: any;
+    data: any;
     user_id: string;
   } = {
     id: input.id, 
     name: input.name,
-    product_type: input.product_type,
-    batch_size: input.batch_size ?? null,
-    formula_data: validatedFormulaData,
+    data: validatedFormulaData,
     user_id: user.id,
   };
 
