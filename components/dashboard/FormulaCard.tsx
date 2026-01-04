@@ -97,7 +97,7 @@ export default function FormulaCard({ formula, onDelete, onDuplicate }: FormulaC
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
   
-  const d = formula.data ?? {};
+  const d: any = (formula as any).data ?? {};
   const productTypeStyles = getProductTypeStyles(d.productType || d.product_type || '');
   const technicalStatus = calculateTechnicalStatus(formula);
   const technicalStatusStyles = getTechnicalStatusBadgeStyles(technicalStatus);
