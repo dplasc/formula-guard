@@ -87,16 +87,23 @@ export default function BlogList({ posts }: BlogListProps) {
                 <h2 className="text-xl font-bold text-gray-900 group-hover:text-teal-600 transition-colors mb-2 line-clamp-2">
                   {post.title}
                 </h2>
-                <time
-                  dateTime={post.date}
-                  className="text-sm text-gray-500 block mb-3"
-                >
-                  {new Date(post.date).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </time>
+                <div className="flex items-center justify-between mb-3">
+                  <time
+                    dateTime={post.date}
+                    className="text-sm text-gray-500"
+                  >
+                    {new Date(post.date).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </time>
+                  {post.category && (
+                    <span className="text-xs px-2 py-0.5 rounded-full border border-gray-300 text-gray-600 bg-gray-50">
+                      {post.category}
+                    </span>
+                  )}
+                </div>
                 {post.description && (
                   <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">
                     {post.description}
