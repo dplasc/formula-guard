@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ingredients as allIngredients, type Ingredient as IngredientDataBase } from "@/data/mockIngredients";
 import { useAuth } from "@/hooks/useAuth";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 // Extend IngredientData to include custom flag and safety fields
 type IngredientData = IngredientDataBase & {
@@ -17,6 +18,7 @@ import { Download, Trash2, Search, FolderOpen, X, Sparkles, Briefcase, User, Plu
 import { generateCosmeticFormulationReport } from "@/utils/pdfGenerator";
 import { saveFormula } from "@/app/actions/formulas";
 import { getFormulaById } from "@/app/actions/getFormulaById";
+import { getFormulas } from "@/app/dashboard/actions";
 import { evaluateSafetyWarnings, getUnverifiedIngredients, type SafetyWarning } from "@/lib/safetyRules";
 import { getIngredientKbMap, type IngredientKbRow } from "@/app/builder/actions-ingredient-kb";
 import { resolveIngredientInci } from "@/app/builder/actions-ingredient-synonyms";
@@ -100,6 +102,10 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
   const [processSteps, setProcessSteps] = useState<ProcessStep[]>([]);
   const [savedFormulas, setSavedFormulas] = useState<SavedFormula[]>([]);
   const [showLoadModal, setShowLoadModal] = useState<boolean>(false);
+  type CloudFormulaListItem = { id: string; name: string; updated_at: string; data?: any };
+  const [cloudFormulas, setCloudFormulas] = useState<CloudFormulaListItem[]>([]);
+  const [isLoadingCloudFormulas, setIsLoadingCloudFormulas] = useState(false);
+  const [cloudLoadError, setCloudLoadError] = useState<string | null>(null);
   const [customIngredients, setCustomIngredients] = useState<IngredientData[]>([]);
   const [showCustomModal, setShowCustomModal] = useState<boolean>(false);
   const [showManageCustomModal, setShowManageCustomModal] = useState<boolean>(false);
@@ -572,6 +578,27 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
       }
     }
   }, []);
+
+  // Load cloud formulas when modal opens
+  useEffect(() => {
+    if (!showLoadModal) return;
+    setIsLoadingCloudFormulas(true);
+    setCloudLoadError(null);
+    getFormulas()
+      .then((result) => {
+        if (result.error) {
+          setCloudLoadError(result.error);
+          setCloudFormulas([]);
+        } else {
+          setCloudFormulas(Array.isArray(result.data) ? result.data : []);
+        }
+      })
+      .catch((e) => {
+        setCloudLoadError(e?.message ?? "Failed to load formulas");
+        setCloudFormulas([]);
+      })
+      .finally(() => setIsLoadingCloudFormulas(false));
+  }, [showLoadModal]);
 
   // Load initial formula data from props (when loaded from URL)
   useEffect(() => {
@@ -1829,6 +1856,13 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
       // Set saving status before starting the actual save operation
       setSaveStatus('saving');
 
+      // Log auth user info before save
+      const supabase = createSupabaseBrowserClient();
+      const { data: authData, error: authErr } = await supabase.auth.getUser();
+      console.log('[save] auth user', { userId: authData?.user?.id ?? null, authErr: authErr?.message ?? null });
+
+      // BLOCK A: Save operation (Supabase upsert)
+      let saveResult: { id: string } | null = null;
       try {
         // Prepare the formula data to save (full snapshot for formula_data)
         const formulaData = {
@@ -1847,21 +1881,85 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
         const result = await saveFormula({
           id: currentFormulaId || undefined,
           name: nameToSave,
-          product_type: productType,
-          batch_size: batchSize,
-          formula_data: formulaData,
+          data: formulaData,
         });
 
-        // SYNC STATUS INTEGRITY: Only update sync status AFTER database confirms a VALID save
-        if (result && result.id) {
-          setCurrentFormulaId(result.id);
+        // Validate save result
+        if (!result || !result.id) {
+          throw new Error('Save operation completed but no formula ID was returned');
+        }
+
+        // Log successful save
+        console.log('[save] upsert ok', { id: result.id });
+        saveResult = result;
+      } catch (error: any) {
+        // Error handling for save operation failure
+        // Log raw error for debugging
+        console.error('[save] raw error', error);
+        console.error('[save] raw error keys', error && typeof error === 'object' ? Object.keys(error as any) : null);
+        
+        // Extract error details with fallbacks
+        const msg =
+          (error as any)?.message ??
+          (error as any)?.error?.message ??
+          (error as any)?.statusText ??
+          (typeof error === 'string' ? error : null) ??
+          'Unknown error';
+        const code = (error as any)?.code ?? (error as any)?.error?.code ?? null;
+        const details = (error as any)?.details ?? (error as any)?.error?.details ?? null;
+        
+        console.error('[save] upsert failed', { message: msg, code, details });
+        setIsSaving(false);
+        setIsDirty(true); // Keep dirty state - status must remain "Unsaved changes"
+        setSaveError(msg);
+        setSaveStatus('error');
+        setNotification({ type: 'error', message: 'Failed to save. Please check your connection.' });
+        // Clear error notification after 5 seconds
+        setTimeout(() => setNotification(null), 5000);
+        return; // Abort - do not proceed to post-save operations
+      }
+
+      // BLOCK B: Post-save UI sync (router, state updates)
+      // Only execute if save succeeded
+      if (saveResult && saveResult.id) {
+        try {
+          setCurrentFormulaId(saveResult.id);
+          
           // Update URL with formula ID if it's a new formula or URL doesn't have it
           if (!currentFormulaId) {
             const currentPath = window.location.pathname;
             const searchParams = new URLSearchParams(window.location.search);
-            searchParams.set('id', result.id);
+            searchParams.set('id', saveResult.id);
             router.replace(`${currentPath}?${searchParams.toString()}`, { scroll: false });
           }
+          
+          // Mirror to localStorage for Load modal
+          try {
+            const saved = localStorage.getItem("saved_formulas");
+            const formulas: any[] = saved ? JSON.parse(saved) : [];
+            const existingIndex = formulas.findIndex((f) => f.id === saveResult.id);
+            const formulaEntry = {
+              id: saveResult.id,
+              name: nameToSave,
+              ingredients: ingredients,
+              batchSize: batchSize,
+              unitSize: unitSize,
+              procedure: procedure,
+              notes: notes,
+              processSteps: processSteps,
+              savedAt: Date.now()
+            };
+            if (existingIndex >= 0) {
+              formulas[existingIndex] = formulaEntry;
+            } else {
+              formulas.push(formulaEntry);
+            }
+            localStorage.setItem("saved_formulas", JSON.stringify(formulas));
+          } catch (localStorageError) {
+            // Silently fail - localStorage is optional mirror
+            console.warn('[save] localStorage mirror failed', localStorageError);
+          }
+          
           // Only mark as saved after successful database confirmation
           setIsDirty(false);
           setLastSavedAt(new Date());
@@ -1876,20 +1974,27 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
           setTimeout(() => setNotification(null), 3000);
           // Reset save status after 2 seconds
           setTimeout(() => setSaveStatus('idle'), 2000);
-        } else {
-          throw new Error('Save operation completed but no formula ID was returned');
+        } catch (error) {
+          // Post-save UI sync failed, but save itself succeeded
+          // Log error but do NOT mark save as failed
+          console.error('[save] post-save refresh failed', error);
+          // Still mark as saved since the database operation succeeded
+          setIsDirty(false);
+          setLastSavedAt(new Date());
+          setSaveError(null);
+          setSaveStatus('saved');
+          const now = new Date();
+          const hh = String(now.getHours()).padStart(2, '0');
+          const mm = String(now.getMinutes()).padStart(2, '0');
+          setSavedAt(`${hh}:${mm}`);
+          setNotification({ type: 'success', message: 'Saved' });
+          // Clear notification after 3 seconds
+          setTimeout(() => setNotification(null), 3000);
+          // Reset save status after 2 seconds
+          setTimeout(() => setSaveStatus('idle'), 2000);
+        } finally {
+          setIsSaving(false);
         }
-      } catch (error) {
-        // Error handling - show clear error message
-        console.error("Error saving formula:", error);
-        setIsDirty(true); // Keep dirty state - status must remain "Unsaved changes"
-        setSaveError('Failed to save');
-        setSaveStatus('error');
-        setNotification({ type: 'error', message: 'Failed to save. Please check your connection.' });
-        // Clear error notification after 5 seconds
-        setTimeout(() => setNotification(null), 5000);
-      } finally {
-        setIsSaving(false);
       }
     });
   };
@@ -1963,9 +2068,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
         const result = await saveFormula({
           // id is intentionally omitted to create a new formula
           name: nameToSave,
-          product_type: productType,
-          batch_size: batchSize,
-          formula_data: formulaData,
+          data: formulaData,
         });
 
         if (result && result.id) {
@@ -3602,36 +3705,54 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                 </button>
               </div>
               <div className="overflow-y-auto p-4">
-                {savedFormulas.length === 0 ? (
+                {isLoadingCloudFormulas ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>Loading...</p>
+                  </div>
+                ) : cloudLoadError ? (
+                  <div className="text-center py-8 text-red-500">
+                    <p>{cloudLoadError}</p>
+                  </div>
+                ) : cloudFormulas.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <p>No saved formulas yet.</p>
                     <p className="text-sm mt-2">Save a formula to see it here.</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {[...savedFormulas]
-                      .sort((a, b) => b.savedAt - a.savedAt) // Sort by date, newest first
-                      .map((formula) => (
-                      <div
-                        key={formula.id}
-                        onClick={() => handleLoadFormula(formula)}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-md hover:bg-teal-50 hover:border-teal-300 cursor-pointer transition-colors"
-                      >
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-900">{formula.name}</div>
-                          <div className="text-sm text-gray-500 mt-1">
-                            {formula.ingredients.length} ingredient{formula.ingredients.length !== 1 ? "s" : ""} • Batch: {formula.batchSize}g • Saved: {new Date(formula.savedAt).toLocaleDateString()}
+                    {[...cloudFormulas]
+                      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()) // Sort by date, newest first
+                      .map((item) => {
+                        const d = item.data ?? {};
+                        const ingredients = Array.isArray(d.ingredients) ? d.ingredients : [];
+                        const batchSize = typeof d.batchSize === "number" ? d.batchSize : 100;
+                        return (
+                          <div
+                            key={item.id}
+                            onClick={() => {
+                              handleLoadFormula({
+                                id: item.id,
+                                name: item.name,
+                                ingredients: ingredients,
+                                batchSize: batchSize,
+                                unitSize: typeof d.unitSize === "number" ? d.unitSize : 50,
+                                procedure: typeof d.procedure === "string" ? d.procedure : "",
+                                notes: typeof d.notes === "string" ? d.notes : "",
+                                processSteps: Array.isArray(d.processSteps) ? d.processSteps : [],
+                                savedAt: Date.now(),
+                              });
+                            }}
+                            className="flex items-center justify-between p-4 border border-gray-200 rounded-md hover:bg-teal-50 hover:border-teal-300 cursor-pointer transition-colors"
+                          >
+                            <div className="flex-1">
+                              <div className="font-medium text-gray-900">{item.name}</div>
+                              <div className="text-sm text-gray-500 mt-1">
+                                {ingredients.length} ingredient{ingredients.length !== 1 ? "s" : ""} • Batch: {batchSize}g • Updated: {new Date(item.updated_at).toLocaleDateString()}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <button
-                          onClick={(e) => handleDeleteFormula(formula.id, e)}
-                          className="ml-4 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                          aria-label="Delete formula"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
+                        );
+                      })}
                   </div>
                 )}
               </div>
@@ -5027,4 +5148,3 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
     </div>
   );
 }
-
