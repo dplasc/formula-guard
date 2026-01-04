@@ -7,12 +7,8 @@ import { revalidatePath } from 'next/cache';
 export type FormulaListItem = {
   id: string;
   name: string;
-  product_type?: 'leaveOn' | 'rinseOff';
-  batch_size?: number | null;
   updated_at: string;
-  data?: {
-    ingredients?: Array<{ percentage?: number }>;
-  };
+  data?: any;
 };
 
 export async function getFormulas(): Promise<{ data: FormulaListItem[] | null; error: string | null }> {
@@ -128,7 +124,7 @@ export async function duplicateFormula(formulaId: string): Promise<{ success: bo
   // Load the original formula with ownership verification
   const { data: originalFormula, error: fetchError } = await supabase
     .from('formulas')
-    .select('*')
+    .select('id, name, data, updated_at')
     .eq('id', formulaId)
     .eq('user_id', user.id)
     .single();
@@ -199,16 +195,14 @@ export async function duplicateFormula(formulaId: string): Promise<{ success: bo
   // Create duplicate with new schema fields
   const duplicatePayload = {
     name: newName,
-    product_type: originalFormula.product_type,
-    batch_size: originalFormula.batch_size,
-    formula_data: originalFormula.formula_data, // Copy the entire JSON formula_data field
+    data: originalFormula.data,
     user_id: user.id,
   };
 
   const { data: newFormula, error: insertError } = await supabase
     .from('formulas')
     .insert(duplicatePayload)
-    .select('id, name, product_type, batch_size, updated_at, formula_data')
+    .select('id, name, updated_at, data')
     .single();
 
   if (insertError) {
