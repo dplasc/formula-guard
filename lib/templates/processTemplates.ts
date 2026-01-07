@@ -22,7 +22,7 @@ export const processTemplates: ProcessTemplate[] = [
   {
     id: 'ow-emulsion-hot-hot',
     name: 'O/W Emulsion (Hot/Hot)',
-    tags: ['emulsion', 'oil-water', 'hot', 'creams', 'moisturizer'],
+    tags: ['emulsion','hot-process','leave-on'],
     steps: [
       {
         id: 'step-1',
@@ -109,7 +109,7 @@ export const processTemplates: ProcessTemplate[] = [
   {
     id: 'anhydrous-balm',
     name: 'Anhydrous Balm',
-    tags: ['anhydrous', 'balm', 'oil-based', 'butter', 'wax'],
+    tags: ['anhydrous','hot-process','leave-on'],
     steps: [
       {
         id: 'step-1',
@@ -186,7 +186,7 @@ export const processTemplates: ProcessTemplate[] = [
   {
     id: 'water-based-serum',
     name: 'Water-Based Serum/Toner',
-    tags: ['water-based', 'serum', 'toner', 'liquid', 'actives'],
+    tags: ['gel', 'cold-process', 'leave-on'],
     steps: [
       {
         id: 'step-1',
@@ -273,7 +273,7 @@ export const processTemplates: ProcessTemplate[] = [
   {
     id: 'ow-emulsion-hot-cold',
     name: 'O/W Emulsion (Hot/Cold)',
-    tags: ['emulsion', 'oil-water', 'hot', 'cold', 'creams'],
+    tags: ['emulsion', 'hot-process', 'cold-process', 'leave-on'],
     steps: [
       {
         id: 'step-1',
@@ -360,7 +360,7 @@ export const processTemplates: ProcessTemplate[] = [
   {
     id: 'surfactant-cleanser-cold-blend',
     name: 'Surfactant Cleanser/Shampoo (Cold Blend)',
-    tags: ['surfactant', 'cleanser', 'shampoo', 'cold', 'foaming'],
+    tags: ['cleanser','cold-process','rinse-off'],
     steps: [
       {
         id: 'step-1',
@@ -457,7 +457,7 @@ export const processTemplates: ProcessTemplate[] = [
   {
     id: 'carbomer-gel-neutralization',
     name: 'Carbomer Gel (Neutralization)',
-    tags: ['gel', 'carbomer', 'neutralization', 'thickening', 'water-based'],
+    tags: ['gel','cold-process','leave-on'],
     steps: [
       {
         id: 'step-1',
@@ -558,6 +558,120 @@ export const processTemplates: ProcessTemplate[] = [
         timeMin: 5,
         description: 'Stir gently to ensure homogeneity. Fill into clean, sanitized containers.',
         notes: 'Avoid excessive stirring to maintain gel structure. Label with batch number and date.',
+      },
+    ],
+  },
+  {
+    id: 'gel-mask-cold-process',
+    name: 'Hydrating Gel Mask (Cold Process)',
+    tags: ['mask', 'gel', 'cold-process', 'leave-on'],
+    steps: [
+      {
+        id: 'step-1',
+        order: 1,
+        title: 'Hydration Phase',
+        phase: 'B',
+        tempC: null,
+        timeMin: 10,
+        description: 'Combine purified water and humectants (glycerin, hyaluronic acid) in base container. Stir until fully dissolved.',
+        notes: 'Use room temperature water. Ensure all water-soluble actives are dissolved.',
+      },
+      {
+        id: 'step-2',
+        order: 2,
+        title: 'Gelling/Thickening',
+        phase: 'B',
+        tempC: null,
+        timeMin: 20,
+        description: 'Slowly add gelling agents (xanthan gum, carrageenan, or carbomer) while stirring. Allow time for hydration.',
+        notes: 'Add gelling agent slowly to prevent clumping. Mixture will thicken as it hydrates.',
+      },
+      {
+        id: 'step-3',
+        order: 3,
+        title: 'Add Active Ingredients',
+        phase: 'B',
+        tempC: null,
+        timeMin: 5,
+        description: 'Incorporate additional water-soluble actives, extracts, and botanical ingredients.',
+        notes: 'Ensure all ingredients are well dispersed.',
+      },
+      {
+        id: 'step-4',
+        order: 4,
+        title: 'Cool-Down and Finalization',
+        phase: 'coolDown',
+        tempC: null,
+        timeMin: 10,
+        description: 'Allow mixture to rest and reach room temperature. Add preservatives and adjust pH if needed.',
+        notes: 'Check consistency and pH. Adjust to target pH 5.0-6.5 if necessary.',
+      },
+      {
+        id: 'step-5',
+        order: 5,
+        title: 'Final Mixing and Packaging',
+        phase: 'general',
+        tempC: null,
+        timeMin: 5,
+        description: 'Stir gently to ensure homogeneity. Fill into clean, sanitized containers.',
+        notes: 'Avoid excessive agitation. Label with batch number and date.',
+      },
+    ],
+  },
+  {
+    id: 'clay-mask-cold-process',
+    name: 'Clay Mask (Cold Process)',
+    tags: ['mask', 'cold-process', 'rinse-off'],
+    steps: [
+      {
+        id: 'step-1',
+        order: 1,
+        title: 'Hydration/Dispersion',
+        phase: 'B',
+        tempC: null,
+        timeMin: 5,
+        description: 'Prepare purified water base. Add humectants and water-soluble ingredients. Stir until fully dissolved.',
+        notes: 'Use room temperature water. Ensure all liquid ingredients are well dispersed.',
+      },
+      {
+        id: 'step-2',
+        order: 2,
+        title: 'Clay Incorporation',
+        phase: 'B',
+        tempC: null,
+        timeMin: 10,
+        description: 'Slowly sift clay powder (bentonite, kaolin, or other clays) into the liquid base while stirring continuously.',
+        notes: 'Add clay slowly to prevent clumping. Use sifter or sieve for even distribution.',
+      },
+      {
+        id: 'step-3',
+        order: 3,
+        title: 'Homogenization',
+        phase: 'general',
+        tempC: null,
+        timeMin: 10,
+        description: 'Mix thoroughly using a whisk or mechanical mixer until all clay particles are fully dispersed and no lumps remain.',
+        notes: 'Continue mixing until smooth paste consistency is achieved. Check for any dry spots or clumps.',
+      },
+      {
+        id: 'step-4',
+        order: 4,
+        title: 'Cool-Down and Finalization',
+        phase: 'coolDown',
+        tempC: null,
+        timeMin: 5,
+        description: 'Allow mixture to rest. Add preservatives and adjust pH if needed. Incorporate any remaining actives or botanical extracts.',
+        notes: 'Check consistency and pH. Target pH 5.5-7.0 for clay masks.',
+      },
+      {
+        id: 'step-5',
+        order: 5,
+        title: 'Final Mixing and Packaging',
+        phase: 'general',
+        tempC: null,
+        timeMin: 5,
+        description: 'Stir gently to ensure homogeneity. Fill into clean, sanitized containers.',
+        notes: 'Avoid excessive agitation. Label with batch number and date.',
       },
     ],
   },
