@@ -2505,7 +2505,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                   <button
                     onClick={handleCloudSave}
                     disabled={isSaving || isFormulaDeleted || !isPaidUser}
-                    title={!isPaidUser ? "Upgrade to the paid plan to enable saving." : undefined}
+                    title={!isPaidUser ? "Upgrade to Pro to save and export your formulas." : undefined}
                     className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSaving ? (
