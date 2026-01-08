@@ -65,7 +65,7 @@ interface SavedFormula {
   savedAt: number; // timestamp
 }
 
-type CategoryFilter = "All" | "Lipid" | "Emulsifier/Thickener" | "Active/Extract";
+type CategoryFilter = "All" | "__BASE__" | "__PRESERVATIVES__" | "__FRAGRANCE__" | "Lipid" | "Emulsifier/Thickener" | "Active/Extract";
 
 interface FormulaCalculatorProps {
   initialFormulaId?: string | null;
@@ -500,18 +500,52 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
 
     // Apply category filter
     if (selectedCategory !== "All") {
-      // Map UI tab values to actual ingredient.category strings
-      const categoryToIngredientCategory: Record<string, string> = {
-        "lipid": "Oils & Butters",
-        "emulsifier": "Emulsifier/Thickener",
-        "emulsifier/thickener": "Emulsifier/Thickener",
-        "active": "Active/Extract",
-        "active/extract": "Active/Extract",
-      };
-      const categoryKey = (selectedCategory ?? "").toLowerCase();
-      const categoryToFilter = categoryToIngredientCategory[categoryKey];
-      if (categoryToFilter) {
-        filtered = filtered.filter((ing) => ing.category === categoryToFilter);
+      // Handle virtual categories (Base, Preservatives, Fragrance)
+      if (selectedCategory === "__BASE__") {
+        filtered = filtered.filter((ing) => {
+          const subcategory = (ing.subcategory || "").toLowerCase();
+          const inci = (ing.inci || "").toLowerCase();
+          return (
+            subcategory.includes("water") ||
+            subcategory.includes("hydrosol") ||
+            subcategory.includes("solvent") ||
+            subcategory.includes("aqueous") ||
+            subcategory.includes("base") ||
+            inci.includes("aqua")
+          );
+        });
+      } else if (selectedCategory === "__PRESERVATIVES__") {
+        filtered = filtered.filter((ing) => {
+          const subcategory = (ing.subcategory || "").toLowerCase();
+          const name = (ing.name || "").toLowerCase();
+          return subcategory.includes("preserv") || name.includes("preserv");
+        });
+      } else if (selectedCategory === "__FRAGRANCE__") {
+        filtered = filtered.filter((ing) => {
+          const subcategory = (ing.subcategory || "").toLowerCase();
+          const name = (ing.name || "").toLowerCase();
+          return (
+            subcategory.includes("fragrance") ||
+            subcategory.includes("essential oil") ||
+            subcategory.includes("eo") ||
+            name.includes("fragrance") ||
+            name.includes("essential oil")
+          );
+        });
+      } else {
+        // Map UI tab values to actual ingredient.category strings
+        const categoryToIngredientCategory: Record<string, string> = {
+          "lipid": "Oils & Butters",
+          "emulsifier": "Emulsifier/Thickener",
+          "emulsifier/thickener": "Emulsifier/Thickener",
+          "active": "Active/Extract",
+          "active/extract": "Active/Extract",
+        };
+        const categoryKey = (selectedCategory ?? "").toLowerCase();
+        const categoryToFilter = categoryToIngredientCategory[categoryKey];
+        if (categoryToFilter) {
+          filtered = filtered.filter((ing) => ing.category === categoryToFilter);
+        }
       }
     }
 
@@ -2701,6 +2735,36 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                 }`}
               >
                 All
+              </button>
+              <button
+                onClick={() => setSelectedCategory("__BASE__")}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  selectedCategory === "__BASE__"
+                    ? "bg-teal-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                Base
+              </button>
+              <button
+                onClick={() => setSelectedCategory("__PRESERVATIVES__")}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  selectedCategory === "__PRESERVATIVES__"
+                    ? "bg-teal-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                Preservatives
+              </button>
+              <button
+                onClick={() => setSelectedCategory("__FRAGRANCE__")}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  selectedCategory === "__FRAGRANCE__"
+                    ? "bg-teal-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                Fragrance
               </button>
               <button
                 onClick={() => setSelectedCategory("Lipid")}

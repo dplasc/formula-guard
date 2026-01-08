@@ -1267,5 +1267,123 @@ category: "Oils & Butters"
     priceIndex: 4,
     solubility: "Water-soluble",
     averagePricePerKg: 120
+  },
+  {
+    id: "distilled-water",
+    name: "Distilled Water",
+    inci: "Aqua",
+    category: "Active/Extract",
+    subcategory: "Water",
+    minUsage: 5,
+    maxUsage: 99,
+    maxUsageLeaveOn: 99,
+    maxUsageRinseOff: 99,
+    description: "Purified water base for cosmetic formulations.",
+    averagePricePerKg: 1
+  },
+  {
+    id: "aloe-vera-juice",
+    name: "Aloe Vera Juice",
+    inci: "Aloe Barbadensis Leaf Juice",
+    category: "Active/Extract",
+    subcategory: "Aqueous Base",
+    minUsage: 1,
+    maxUsage: 99,
+    description: "Soothing hydrating aqueous base with skin benefits.",
+    averagePricePerKg: 15
+  },
+  {
+    id: "glycerin",
+    name: "Glycerin",
+    inci: "Glycerin",
+    category: "Active/Extract",
+    subcategory: "Solvent",
+    minUsage: 0.5,
+    maxUsage: 10,
+    maxUsageLeaveOn: 10,
+    maxUsageRinseOff: 10,
+    description: "Humectant and solvent for cosmetic formulations.",
+    averagePricePerKg: 5
+  },
+  {
+    id: "propanediol-1-3",
+    name: "Propanediol 1,3",
+    inci: "Propanediol",
+    category: "Active/Extract",
+    subcategory: "Solvent",
+    minUsage: 0.5,
+    maxUsage: 10,
+    description: "Natural derived humectant and solvent.",
+    averagePricePerKg: 8
+  },
+  {
+    id: "phenoxyethanol-ethylhexylglycerin",
+    name: "Phenoxyethanol (and) Ethylhexylglycerin",
+    inci: "Phenoxyethanol (and) Ethylhexylglycerin",
+    category: "Active/Extract",
+    subcategory: "Preservative",
+    minUsage: 0.3,
+    maxUsage: 1.0,
+    maxUsageLeaveOn: 1.0,
+    maxUsageRinseOff: 1.0,
+    description: "Broad-spectrum preservative system.",
+    averagePricePerKg: 25
+  },
+  {
+    id: "sodium-benzoate-potassium-sorbate",
+    name: "Sodium Benzoate (and) Potassium Sorbate",
+    inci: "Sodium Benzoate (and) Potassium Sorbate",
+    category: "Active/Extract",
+    subcategory: "Preservative",
+    minUsage: 0.2,
+    maxUsage: 1.0,
+    description: "Natural preservative system for acidic formulations.",
+    averagePricePerKg: 12
+  },
+  {
+    id: "disodium-edta",
+    name: "Disodium EDTA",
+    inci: "Disodium EDTA",
+    category: "Active/Extract",
+    subcategory: "Chelator",
+    minUsage: 0.05,
+    maxUsage: 0.2,
+    description: "Chelating agent to improve stability and preservative efficacy.",
+    averagePricePerKg: 10
+  },
+  {
+    id: "fragrance-generic",
+    name: "Fragrance (Generic)",
+    inci: "Parfum",
+    category: "Active/Extract",
+    subcategory: "Fragrance",
+    minUsage: 0.1,
+    maxUsage: 1.0,
+    maxUsageLeaveOn: 1.0,
+    maxUsageRinseOff: 1.0,
+    description: "Generic fragrance blend.",
+    averagePricePerKg: 50
+  },
+  {
+    id: "lavender-essential-oil",
+    name: "Lavender Essential Oil",
+    inci: "Lavandula Angustifolia (Lavender) Oil",
+    category: "Active/Extract",
+    subcategory: "Essential Oil",
+    minUsage: 0.05,
+    maxUsage: 1.0,
+    description: "Calming essential oil with therapeutic properties.",
+    averagePricePerKg: 80
+  },
+  {
+    id: "peppermint-essential-oil",
+    name: "Peppermint Essential Oil",
+    inci: "Mentha Piperita (Peppermint) Oil",
+    category: "Active/Extract",
+    subcategory: "Essential Oil",
+    minUsage: 0.02,
+    maxUsage: 0.5,
+    description: "Cooling essential oil with invigorating properties.",
+    averagePricePerKg: 75
   }
 ];
