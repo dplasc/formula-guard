@@ -3670,7 +3670,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium text-sm"
               >
                 <Sparkles className="w-4 h-4" />
-                Start from template
+                Apply process template
               </button>
               <button
                 onClick={handleAddProcessStep}
@@ -3688,8 +3688,13 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
               <p className="text-xs mt-1">Click "Add Step" to create a process step.</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {processSteps
+            <>
+              <p className="text-xs text-gray-500 mb-3">
+                Process templates define how the formula is manufactured.
+                Ingredients are added and adjusted above.
+              </p>
+              <div className="space-y-2">
+                {processSteps
                 .sort((a, b) => a.order - b.order)
                 .map((step) => {
                   const metaParts: string[] = [];
@@ -3755,7 +3760,8 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                     </div>
                   );
                 })}
-            </div>
+              </div>
+            </>
           )}
         </div>
 
