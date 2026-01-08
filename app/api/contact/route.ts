@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { Resend } from 'resend';
 
 // In-memory rate limiting store
 // Map<IP, Array<timestamp>>
@@ -113,8 +114,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Success - for now just return ok
-    // TODO: Send email notification
+    // Send email notification (non-blocking - Supabase insert already succeeded)
+    try {
+      const resendApiKey = process.env.RESEND_API_KEY;
+      if (resendApiKey) {
+        const resend = new Resend(resendApiKey);
+        await resend.emails.send({
+          from: 'FormulaGuard <onboarding@resend.dev>',
+          to: 'info@formulaguard.com',
+          replyTo: email.trim(),
+          subject: subject.trim() ? `Contact form: ${subject.trim()}` : 'New message',
+          text: `Name: ${name || 'Not provided'}\nEmail: ${email.trim()}\nSubject: ${subject.trim() || 'No subject'}\n\nMessage:\n${message.trim()}`,
+        });
+      }
+    } catch (emailError) {
+      // Log email error but don't fail the request since Supabase insert succeeded
+      console.error('Failed to send email notification:', emailError);
+    }
+
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (error) {
     // Handle JSON parsing errors or other issues
