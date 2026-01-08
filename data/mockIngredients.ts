@@ -1341,6 +1341,24 @@ category: "Oils & Butters"
     averagePricePerKg: 12
   },
   {
+    id: "geogard-221-eco",
+    name: "Geogard 221 (ECO)",
+    inci: "Benzyl Alcohol, Dehydroacetic Acid",
+    category: "Preservatives",
+    subcategory: "Preservative",
+    minUsage: 0.8,
+    maxUsage: 1.0,
+    maxUsageLeaveOn: 1.0,
+    maxUsageRinseOff: 1.0,
+    description: "Widely used ECO-certified preservative system. Effective against bacteria, yeast, and mold. Suitable for emulsions, gels, and aqueous formulations.",
+    solubility: "water",
+    heatSensitive: true,
+    phRangeMin: 2,
+    phRangeMax: 7,
+    isStarterIngredient: true,
+    averagePricePerKg: 35
+  },
+  {
     id: "disodium-edta",
     name: "Disodium EDTA",
     inci: "Disodium EDTA",
