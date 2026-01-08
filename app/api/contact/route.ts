@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
       if (resendApiKey) {
         const resend = new Resend(resendApiKey);
         await resend.emails.send({
-          from: 'FormulaGuard <onboarding@resend.dev>',
+          from: 'FormulaGuard <info@formulaguard.com>',
           to: 'info@formulaguard.com',
           replyTo: email.trim(),
           subject: subject.trim() ? `Contact form: ${subject.trim()}` : 'New message',
