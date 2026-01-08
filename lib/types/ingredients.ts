@@ -57,5 +57,8 @@ export interface Ingredient extends IngredientBase {
   charge?: string;
   solubility?: string;
   priceIndex?: number;
+  phRangeMin?: number;
+  phRangeMax?: number;
+  isStarterIngredient?: boolean;
 }
 
