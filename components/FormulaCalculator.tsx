@@ -3911,6 +3911,10 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                 </button>
               </div>
               <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                <p className="text-xs text-gray-500 mb-4">
+                  Tip: If you're unsure, enter Ingredient Name and INCI only.
+                  Default values are safe for learning and can be refined later.
+                </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <label htmlFor="customName" className="block text-sm font-medium text-gray-700 mb-2">
@@ -4031,7 +4035,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                     />
                     <p className="mt-1 text-xs text-gray-500">
-                      Used as fallback if Leave-On / Rinse-Off limits are not specified.
+                      If unsure, leave 100%. You can set stricter limits later.
                     </p>
                   </div>
                   
