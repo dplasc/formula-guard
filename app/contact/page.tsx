@@ -1,6 +1,7 @@
 import Link from "next/link";
 import PublicHeader from "@/components/marketing/PublicHeader";
 import SocialIcons from "@/components/SocialIcons";
+import ContactForm from "@/components/marketing/ContactForm";
 import { getSocialLinks } from "@/lib/siteSettings";
 import { buildMetadata } from "@/lib/seo";
 
@@ -12,6 +13,7 @@ export const metadata = buildMetadata({
 
 export default async function ContactPage() {
   const socialLinks = await getSocialLinks();
+
   return (
     <div className="min-h-screen bg-gray-50">
       <PublicHeader />
@@ -19,35 +21,24 @@ export default async function ContactPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 sm:p-10">
           <h1 className="text-4xl font-bold text-gray-900 mb-8">Contact</h1>
 
-          <div className="prose prose-gray max-w-none space-y-8">
+          <div className="space-y-6">
             {/* Intro */}
-            <section>
-              <p className="text-gray-700 leading-relaxed">
-                If you have questions about FormulaGuard, need support, or want to get in touch regarding the service, you can contact us using the details below.
-              </p>
-            </section>
+            <p className="text-gray-700 leading-relaxed">
+              If you have questions about FormulaGuard, need support, or want to get in touch regarding the service, please use the form below.
+            </p>
 
-            {/* Contact Information */}
-            <section>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Contact Information</h2>
-              <p className="text-gray-700 leading-relaxed">
+            {/* Contact Form */}
+            <ContactForm />
+
+            {/* Alternative Contact */}
+            <div className="pt-6 border-t border-gray-200">
+              <p className="text-sm text-gray-600 mb-2">
+                Prefer to email directly?
+              </p>
+              <p className="text-gray-700">
                 <strong>Email:</strong> <a href="mailto:info@formulaguard.com" className="text-teal-600 hover:text-teal-700 underline">info@formulaguard.com</a>
               </p>
-            </section>
-
-            {/* Support Note */}
-            <section>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                For support requests, please include as much detail as possible (account email, issue description, screenshots if applicable).
-              </p>
-            </section>
-
-            {/* Response Time */}
-            <section>
-              <p className="text-gray-700 leading-relaxed">
-                We aim to respond to all inquiries within 1–2 business days.
-              </p>
-            </section>
+            </div>
           </div>
 
           {/* Footer Links */}
