@@ -2,7 +2,7 @@ export type IngredientCategory =
   | 'Preservatives' | 'Fragrance' | 'Essential Oils' | 'UV Filters' | 'Colorants'
   | 'Surfactants' | 'pH Adjusters' | 'Actives' | 'Emulsifiers' | 'Humectants'
   | 'Thickeners' | 'Solubilizers' | 'Chelators' | 'Extracts' | 'Oils & Butters'
-  | 'Water Phase' | 'Other'
+  | 'Water Phase' | 'Powders / Solids' | 'Other'
   | 'Emulsifier/Thickener' | 'Active/Extract'; // Legacy categories from existing data
 
 export type ProductType = 'leave-on' | 'rinse-off' | 'both';

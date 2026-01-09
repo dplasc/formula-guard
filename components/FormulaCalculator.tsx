@@ -66,7 +66,7 @@ interface SavedFormula {
   savedAt: number; // timestamp
 }
 
-type CategoryFilter = "All" | "__BASE__" | "__PRESERVATIVES__" | "__FRAGRANCE__" | "Lipid" | "Emulsifier/Thickener" | "Active/Extract" | "Water Phase";
+type CategoryFilter = "All" | "__BASE__" | "__PRESERVATIVES__" | "__FRAGRANCE__" | "Lipid" | "Emulsifier/Thickener" | "Active/Extract" | "Water Phase" | "Powders / Solids";
 
 interface FormulaCalculatorProps {
   initialFormulaId?: string | null;
@@ -576,6 +576,8 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
           "active/extract": "Active/Extract",
           "aqueous": "Water Phase",
           "water phase": "Water Phase",
+          "powders": "Powders / Solids",
+          "powders / solids": "Powders / Solids",
         };
         const categoryKey = (selectedCategory ?? "").toLowerCase();
         const categoryToFilter = categoryToIngredientCategory[categoryKey];
@@ -2934,6 +2936,16 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
               >
                 Aqueous
               </button>
+              <button
+                onClick={() => setSelectedCategory("Powders / Solids")}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  selectedCategory === "Powders / Solids"
+                    ? "bg-teal-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                Powders
+              </button>
             </div>
           </div>
         </div>
@@ -4167,10 +4179,16 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                       <option value="Preservative">Preservative</option>
                       <option value="Stabilizer">Stabilizer</option>
                       <option value="Water Phase">Aqueous (Water Phase)</option>
+                      <option value="Powders / Solids">Powders / Solids</option>
                     </select>
                     {newCustomIngredient.category === 'Water Phase' && (
                       <p className="mt-1 text-xs text-gray-500">
                         Water-based ingredients used as part of the aqueous phase (hydrolates, juices, infusions).
+                      </p>
+                    )}
+                    {newCustomIngredient.category === 'Powders / Solids' && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Dry powders and solid base materials (clays, starches, mineral powders).
                       </p>
                     )}
                   </div>
