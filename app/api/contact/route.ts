@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { Resend } from 'resend';
+import { sendUserAutoReply } from '@/lib/email/sendUserAutoReply';
 
 // In-memory rate limiting store
 // Map<IP, Array<timestamp>>
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     // Insert into Supabase using admin client
     const adminClient = createAdminClient();
-    const { error: insertError } = await adminClient
+    const { data: insertData, error: insertError } = await adminClient
       .from('contact_requests')
       .insert({
         name: name || null,
@@ -104,7 +105,9 @@ export async function POST(request: NextRequest) {
         ip: clientIP,
         user_agent: userAgent,
         user_id: null,
-      });
+      })
+      .select('id')
+      .single();
 
     if (insertError) {
       console.error('Failed to insert contact request:', insertError);
@@ -113,6 +116,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    const contactRequestId = insertData?.id || null;
 
     // Send email notification (non-blocking - Supabase insert already succeeded)
     try {
@@ -130,6 +135,20 @@ export async function POST(request: NextRequest) {
     } catch (emailError) {
       // Log email error but don't fail the request since Supabase insert succeeded
       console.error('Failed to send email notification:', emailError);
+    }
+
+    // Send auto-reply email to user (non-blocking - Supabase insert already succeeded)
+    try {
+      await sendUserAutoReply({
+        to: email.trim(),
+        name: name || null,
+      });
+    } catch (autoReplyError) {
+      // Log error but don't fail the request since Supabase insert succeeded
+      console.error('AUTO_REPLY_EMAIL_FAILED', {
+        contactRequestId,
+        error: autoReplyError,
+      });
     }
 
     return NextResponse.json({ ok: true }, { status: 200 });
