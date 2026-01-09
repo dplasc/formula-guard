@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { requireVerifiedUser } from '@/lib/auth/verify-email-guard';
 
 export type UserAnnouncement = {
   id: string;
@@ -117,15 +118,30 @@ export async function markAllAnnouncementsAsRead(): Promise<{
   success: boolean;
   error: string | null;
 }> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
+  // Enforce email verification for write operations
+  let user;
+  try {
+    user = await requireVerifiedUser();
+  } catch (error: any) {
+    if (error.message === 'UNAUTHENTICATED') {
+      return {
+        success: false,
+        error: 'Not authenticated',
+      };
+    }
+    if (error.message === 'EMAIL_NOT_VERIFIED') {
+      return {
+        success: false,
+        error: 'EMAIL_NOT_VERIFIED',
+      };
+    }
     return {
       success: false,
-      error: 'Not authenticated',
+      error: error.message || 'Authentication error',
     };
   }
+
+  const supabase = await createClient();
 
   // Get all unread announcements
   const { data: announcements, error: announcementsError } = await supabase

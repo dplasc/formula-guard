@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { requireVerifiedUser } from '@/lib/auth/verify-email-guard';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
@@ -9,21 +10,46 @@ import { createAdminClient } from '@/lib/supabase/admin';
  */
 export async function POST(request: NextRequest) {
   try {
-    // 1. Authenticate user
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
+    // 1. Enforce email verification
+    let verifiedUser;
+    try {
+      verifiedUser = await requireVerifiedUser();
+    } catch (error: any) {
+      if (error.message === 'UNAUTHENTICATED') {
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
+      if (error.message === 'EMAIL_NOT_VERIFIED') {
+        return NextResponse.json(
+          { error: 'EMAIL_NOT_VERIFIED' },
+          { status: 403 }
+        );
+      }
       return NextResponse.json(
-        { error: 'Unauthorized: Authentication required' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    if (!user.email) {
+    // Get full user object for app_metadata access (stripe_customer_id)
+    const supabase = await createClient();
+    const { data: { user }, error: getUserError } = await supabase.auth.getUser();
+
+    // Edge case: should not happen after requireVerifiedUser, but handle gracefully
+    if (getUserError || !user) {
       return NextResponse.json(
-        { error: 'User email not found' },
-        { status: 400 }
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Safety assertion: ensure user IDs match
+    if (user.id !== verifiedUser.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
       );
     }
 
@@ -55,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     // 4. If no stored ID or stored ID invalid, find by email
     if (!customer) {
-      const normalizedEmail = user.email.trim().toLowerCase();
+      const normalizedEmail = verifiedUser.email.trim().toLowerCase();
 
       // Try using search API first (if available)
       try {

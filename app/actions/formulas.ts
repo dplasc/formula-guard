@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { requireVerifiedUser } from '@/lib/auth/verify-email-guard';
 
 // Formula input type matching the new schema
 export type FormulaInput = {
@@ -11,13 +12,21 @@ export type FormulaInput = {
 };
 
 export async function saveFormula(input: FormulaInput) {
-  const supabase = await createClient();
-  
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-  if (authError || !user) {
-    throw new Error('You must be logged in to save formulas.');
+  // Enforce email verification for write operations
+  let user;
+  try {
+    user = await requireVerifiedUser();
+  } catch (error: any) {
+    if (error.message === 'UNAUTHENTICATED') {
+      throw new Error('You must be logged in to save formulas.');
+    }
+    if (error.message === 'EMAIL_NOT_VERIFIED') {
+      throw new Error('EMAIL_NOT_VERIFIED');
+    }
+    throw error;
   }
+
+  const supabase = await createClient();
 
   // Validate JSON structure for jsonb column
   let validatedFormulaData = input.data;
@@ -75,3 +84,4 @@ export async function listFormulas() {
   if (error) return [];
   return data;
 }
+

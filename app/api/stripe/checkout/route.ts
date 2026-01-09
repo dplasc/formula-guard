@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { createClient } from '@/lib/supabase/server';
+import { requireVerifiedUser } from '@/lib/auth/verify-email-guard';
 
 /**
  * POST /api/stripe/checkout
@@ -12,7 +12,30 @@ import { createClient } from '@/lib/supabase/server';
  */
 export async function POST(request: NextRequest) {
   try {
-    // 1. Parse request body for plan selection
+    // 1. Enforce email verification
+    let user;
+    try {
+      user = await requireVerifiedUser();
+    } catch (error: any) {
+      if (error.message === 'UNAUTHENTICATED') {
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
+      if (error.message === 'EMAIL_NOT_VERIFIED') {
+        return NextResponse.json(
+          { error: 'EMAIL_NOT_VERIFIED' },
+          { status: 403 }
+        );
+      }
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // 2. Parse request body for plan selection
     let plan: 'monthly' | 'yearly' = 'monthly';
     try {
       const body = await request.json();
@@ -24,10 +47,6 @@ export async function POST(request: NextRequest) {
       // If body parsing fails, default to monthly (backward compatibility)
       plan = 'monthly';
     }
-
-    // 2. Authenticate user (optional for checkout, but recommended)
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
     
     // 3. Initialize Stripe client with TEST secret key
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -71,10 +90,10 @@ export async function POST(request: NextRequest) {
       ],
       success_url: `${siteUrl}/upgrade/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/pricing`,
-      customer_email: user?.email || undefined, // Pre-fill email if user is authenticated
+      customer_email: user.email,
       metadata: {
-        user_id: user?.id || '',
-        email: user?.email || '',
+        user_id: user.id,
+        email: user.email,
         plan: plan, // Store plan selection in metadata
       },
     });

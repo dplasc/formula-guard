@@ -3,6 +3,7 @@
 import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { requireVerifiedUser } from '@/lib/auth/verify-email-guard';
 
 export type FormulaListItem = {
   id: string;
@@ -73,17 +74,30 @@ export async function getFormulas(): Promise<{ data: FormulaListItem[] | null; e
 }
 
 export async function deleteFormula(formulaId: string): Promise<{ success: boolean; error: string | null }> {
-  const supabase = await createClient();
-  
-  // Get authenticated user
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-  if (authError || !user) {
+  // Enforce email verification for write operations
+  let user;
+  try {
+    user = await requireVerifiedUser();
+  } catch (error: any) {
+    if (error.message === 'UNAUTHENTICATED') {
+      return {
+        success: false,
+        error: 'You must be logged in to delete formulas.',
+      };
+    }
+    if (error.message === 'EMAIL_NOT_VERIFIED') {
+      return {
+        success: false,
+        error: 'EMAIL_NOT_VERIFIED',
+      };
+    }
     return {
       success: false,
-      error: authError ? `Auth error: ${authError.message}` : 'No user found in session',
+      error: error.message || 'Authentication error',
     };
   }
+
+  const supabase = await createClient();
 
   // Delete formula with RLS check (user_id must match)
   const { error } = await supabase
@@ -108,18 +122,33 @@ export async function deleteFormula(formulaId: string): Promise<{ success: boole
 }
 
 export async function duplicateFormula(formulaId: string): Promise<{ success: boolean; data: FormulaListItem | null; error: string | null }> {
-  const supabase = await createClient();
-  
-  // Get authenticated user
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-  if (authError || !user) {
+  // Enforce email verification for write operations
+  let user;
+  try {
+    user = await requireVerifiedUser();
+  } catch (error: any) {
+    if (error.message === 'UNAUTHENTICATED') {
+      return {
+        success: false,
+        data: null,
+        error: 'You must be logged in to duplicate formulas.',
+      };
+    }
+    if (error.message === 'EMAIL_NOT_VERIFIED') {
+      return {
+        success: false,
+        data: null,
+        error: 'EMAIL_NOT_VERIFIED',
+      };
+    }
     return {
       success: false,
       data: null,
-      error: authError ? `Auth error: ${authError.message}` : 'No user found in session',
+      error: error.message || 'Authentication error',
     };
   }
+
+  const supabase = await createClient();
 
   // Load the original formula with ownership verification
   const { data: originalFormula, error: fetchError } = await supabase

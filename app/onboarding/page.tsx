@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { requireEmailVerification } from '@/lib/auth/verify-email-guard';
+import { getAuthenticatedUser } from '@/lib/auth/verify-email-guard';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function OnboardingPage() {
-  // Enforce email verification
-  const user = await requireEmailVerification();
+  // Get authenticated user and verification status
+  const user = await getAuthenticatedUser();
   if (!user) redirect('/auth');
 
   // Check if user already has formulas
@@ -30,14 +30,28 @@ export default async function OnboardingPage() {
         <p className="text-gray-600 mb-8">
           Create your first cosmetic formula to get started. Our formula builder will guide you through the process.
         </p>
-        <Link
-          href="/builder"
-          className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors"
-        >
-          Create Your First Formula
-        </Link>
+        {!user.isVerified && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+            <p className="text-sm text-yellow-800">
+              Verify your email to create, save, or export formulas.
+            </p>
+          </div>
+        )}
+        {user.isVerified ? (
+          <Link
+            href="/builder"
+            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors"
+          >
+            Create Your First Formula
+          </Link>
+        ) : (
+          <div
+            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-gray-400 bg-gray-200 cursor-not-allowed"
+          >
+            Create Your First Formula
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
