@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Plus, X, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import { demoIngredients, type DemoIngredient } from '@/lib/demoIngredients';
+import { getCategoryDisplayLabel } from '@/lib/ingredients/getCategoryDisplayLabel';
 
 type ProductType = 'leave-on' | 'rinse-off';
 
@@ -234,7 +235,7 @@ export default function DemoBuilder() {
                           <h3 className="text-lg font-semibold text-gray-900">{ing.name}</h3>
                           <p className="text-sm text-gray-500 mt-1">{ing.inci}</p>
                           <span className="inline-block mt-2 px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded">
-                            {ing.category}
+                            {getCategoryDisplayLabel(ing.category)}
                           </span>
                         </div>
                         <button

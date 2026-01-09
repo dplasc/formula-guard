@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { AlertTriangle, Home } from "lucide-react";
 import Link from "next/link";
+import { getCategoryDisplayLabel } from "@/lib/ingredients/getCategoryDisplayLabel";
 
 interface ShareData {
   meta: {
@@ -238,7 +239,7 @@ function ShareContent() {
                       <td className="px-4 py-2 text-gray-900">{ing.name}</td>
                       <td className="px-4 py-2 text-gray-600 text-xs">{ing.inci || '—'}</td>
                       <td className="px-4 py-2 text-right font-medium text-gray-900">{ing.percent.toFixed(2)}%</td>
-                      <td className="px-4 py-2 text-gray-600">{ing.category || '—'}</td>
+                      <td className="px-4 py-2 text-gray-600">{getCategoryDisplayLabel(ing.category)}</td>
                       <td className="px-4 py-2 text-gray-600 text-xs">{getMaxUsageDisplay(ing)}</td>
                     </tr>
                   ))}

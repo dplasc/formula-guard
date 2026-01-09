@@ -25,6 +25,7 @@ import { resolveIngredientInci } from "@/app/builder/actions-ingredient-synonyms
 import { getEuComplianceMap, type EuAnnexEntry, getIfraComplianceMap, type IfraEntry } from "@/app/builder/actions-eu-compliance";
 import { checkEUCompliance, type BlockItem } from "@/lib/euCompliance";
 import { processTemplates, type ProcessTemplate } from "@/lib/templates/processTemplates";
+import { getCategoryDisplayLabel } from "@/lib/ingredients/getCategoryDisplayLabel";
 
 interface Ingredient {
   id: string;
@@ -65,7 +66,7 @@ interface SavedFormula {
   savedAt: number; // timestamp
 }
 
-type CategoryFilter = "All" | "__BASE__" | "__PRESERVATIVES__" | "__FRAGRANCE__" | "Lipid" | "Emulsifier/Thickener" | "Active/Extract";
+type CategoryFilter = "All" | "__BASE__" | "__PRESERVATIVES__" | "__FRAGRANCE__" | "Lipid" | "Emulsifier/Thickener" | "Active/Extract" | "Water Phase";
 
 interface FormulaCalculatorProps {
   initialFormulaId?: string | null;
@@ -573,6 +574,8 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
           "emulsifier/thickener": "Emulsifier/Thickener",
           "active": "Active/Extract",
           "active/extract": "Active/Extract",
+          "aqueous": "Water Phase",
+          "water phase": "Water Phase",
         };
         const categoryKey = (selectedCategory ?? "").toLowerCase();
         const categoryToFilter = categoryToIngredientCategory[categoryKey];
@@ -2921,6 +2924,16 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
               >
                 Actives
               </button>
+              <button
+                onClick={() => setSelectedCategory("Water Phase")}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  selectedCategory === "Water Phase"
+                    ? "bg-teal-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                Aqueous
+              </button>
             </div>
           </div>
         </div>
@@ -4153,7 +4166,13 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                       <option value="Active/Extract">Active/Extract</option>
                       <option value="Preservative">Preservative</option>
                       <option value="Stabilizer">Stabilizer</option>
+                      <option value="Water Phase">Aqueous (Water Phase)</option>
                     </select>
+                    {newCustomIngredient.category === 'Water Phase' && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Water-based ingredients used as part of the aqueous phase (hydrolates, juices, infusions).
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label htmlFor="customProductType" className="block text-sm font-medium text-gray-700 mb-2">
@@ -4496,7 +4515,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                           </div>
                           <div className="text-xs text-gray-500 space-y-1">
                             <div>
-                              <span className="font-medium">Category:</span> {ingredient.category}
+                              <span className="font-medium">Category:</span> {getCategoryDisplayLabel(ingredient.category)}
                               {ingredient.subcategory && ` • ${ingredient.subcategory}`}
                             </div>
                             <div>
@@ -4635,7 +4654,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                               <td className="px-4 py-2 text-gray-900">{ing.name}</td>
                               <td className="px-4 py-2 text-gray-600 text-xs">{fullIngredient?.inci || '—'}</td>
                               <td className="px-4 py-2 text-right font-medium text-gray-900">{ing.percentage.toFixed(2)}%</td>
-                              <td className="px-4 py-2 text-gray-600">{fullIngredient?.category || '—'}</td>
+                              <td className="px-4 py-2 text-gray-600">{getCategoryDisplayLabel(fullIngredient?.category)}</td>
                               <td className="px-4 py-2 text-gray-600 text-xs">{getMaxUsageDisplay()}</td>
                             </tr>
                           );
@@ -4811,7 +4830,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                         maxUsageText = `${legacy}% (fallback)`;
                       }
                       
-                      text += `${ing.name} | ${fullIngredient?.inci || '—'} | ${ing.percentage.toFixed(2)}% | ${fullIngredient?.category || '—'} | Max: ${maxUsageText}\n`;
+                      text += `${ing.name} | ${fullIngredient?.inci || '—'} | ${ing.percentage.toFixed(2)}% | ${getCategoryDisplayLabel(fullIngredient?.category)} | Max: ${maxUsageText}\n`;
                     });
                     text += `\n`;
                     
