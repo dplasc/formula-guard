@@ -33,6 +33,12 @@ export default function PublicHeader() {
                 >
                   FAQ
                 </Link>
+                <Link
+                  href="/how-it-works"
+                  className="text-gray-700 hover:text-teal-600 font-medium transition-colors"
+                >
+                  How it works
+                </Link>
                 {isBlogEnabled && (
                   <Link
                     href="/blog"
@@ -129,6 +135,13 @@ export default function PublicHeader() {
                     className="px-4 py-3 text-gray-700 hover:text-teal-600 hover:bg-gray-50 rounded-md font-medium transition-colors"
                   >
                     FAQ
+                  </Link>
+                  <Link
+                    href="/how-it-works"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="px-4 py-3 text-gray-700 hover:text-teal-600 hover:bg-gray-50 rounded-md font-medium transition-colors"
+                  >
+                    How it works
                   </Link>
                   {isBlogEnabled && (
                     <Link
