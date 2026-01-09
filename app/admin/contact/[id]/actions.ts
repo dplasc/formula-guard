@@ -64,7 +64,7 @@ export async function saveContactAdmin(params: SaveContactAdminParams) {
     };
   } catch (error) {
     console.error('SAVE_CONTACT_ADMIN_ERROR', {
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
     return {
       success: false,
@@ -114,7 +114,7 @@ export async function markReplied(requestId: string) {
     };
   } catch (error) {
     console.error('MARK_REPLIED_ERROR', {
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
     return {
       success: false,

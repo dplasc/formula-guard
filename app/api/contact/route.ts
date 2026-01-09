@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
     // Check rate limiting
     const clientIP = getClientIP(request);
     if (!checkRateLimit(clientIP)) {
+      console.log('RATE_LIMIT_CONTACT_FORM_HIT');
       return NextResponse.json(
         { error: 'Too many requests. Please try again later.' },
         { status: 429 }
@@ -110,7 +111,10 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError) {
-      console.error('Failed to insert contact request:', insertError);
+      console.error('CONTACT_INSERT_FAILED', {
+        code: insertError.code,
+        message: insertError.message,
+      });
       return NextResponse.json(
         { error: 'Failed to save message.' },
         { status: 500 }
@@ -134,7 +138,9 @@ export async function POST(request: NextRequest) {
       }
     } catch (emailError) {
       // Log email error but don't fail the request since Supabase insert succeeded
-      console.error('Failed to send email notification:', emailError);
+      console.error('CONTACT_EMAIL_NOTIFICATION_FAILED', {
+        message: emailError instanceof Error ? emailError.message : 'Unknown error',
+      });
     }
 
     // Send auto-reply email to user (non-blocking - Supabase insert already succeeded)
@@ -147,7 +153,7 @@ export async function POST(request: NextRequest) {
       // Log error but don't fail the request since Supabase insert succeeded
       console.error('AUTO_REPLY_EMAIL_FAILED', {
         contactRequestId,
-        error: autoReplyError,
+        message: autoReplyError instanceof Error ? autoReplyError.message : 'Unknown error',
       });
     }
 
