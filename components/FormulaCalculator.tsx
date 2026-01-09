@@ -93,6 +93,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
   const [focusedIngredientId, setFocusedIngredientId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState<number>(-1);
   const [batchSize, setBatchSize] = useState<number>(100);
   const [unitSize, setUnitSize] = useState<number>(50);
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("All");
@@ -469,6 +470,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
     setFocusedIngredientId(null);
     setSearchQuery("");
     setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
     markDirty();
   };
 
@@ -554,8 +556,8 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
       const lowerQuery = query.toLowerCase().trim();
       filtered = filtered.filter((ing) => {
         const nameMatch = ing.name.toLowerCase().includes(lowerQuery);
-        // Future: add alias matching here if needed
-        return nameMatch;
+        const inciMatch = ing.inci?.toLowerCase().includes(lowerQuery) || false;
+        return nameMatch || inciMatch;
       });
     }
 
@@ -665,6 +667,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
           setFocusedIngredientId(null);
           setSearchQuery("");
           setShowSuggestions(false);
+          setSelectedSuggestionIndex(-1);
         }
       }
     };
@@ -672,6 +675,21 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [focusedIngredientId]);
+
+  // Scroll selected suggestion into view when using keyboard navigation
+  useEffect(() => {
+    if (focusedIngredientId && selectedSuggestionIndex >= 0) {
+      const dropdownRef = dropdownRefs.current[focusedIngredientId];
+      if (dropdownRef) {
+        const selectedElement = dropdownRef.querySelector(
+          `ul li:nth-child(${selectedSuggestionIndex + 1})`
+        ) as HTMLElement;
+        if (selectedElement) {
+          selectedElement.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
+      }
+    }
+  }, [selectedSuggestionIndex, focusedIngredientId]);
 
   // Debounced effect to fetch ingredient KB data when formula ingredients change
   useEffect(() => {
@@ -2994,53 +3012,89 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                             dropdownRefs.current[ingredient.id] = el;
                           }}
                         >
-                          <div className="relative w-full min-w-[120px] flex items-center gap-2">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                            <input
-                              type="text"
-                              value={ingredient.name}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                updateIngredient(ingredient.id, "name", value);
-                                // Immediately update search query to enable filtering
-                                setSearchQuery(value);
-                                setFocusedIngredientId(ingredient.id);
-                                setShowSuggestions(true); // Always show suggestions when user types
-                              }}
-                              onFocus={() => {
-                                setFocusedIngredientId(ingredient.id);
-                                setSearchQuery(ingredient.name);
-                                setShowSuggestions(true); // Show suggestions when input is focused
-                              }}
-                              onBlur={() => {
-                                // Delay hiding to allow clicks on dropdown items
-                                setTimeout(() => {
-                                  setShowSuggestions(false);
-                                }, 200);
-                              }}
-                              placeholder="Search ingredients..."
-                              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                            />
-                            <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+                          <div className="relative w-full min-w-[120px]">
+                            <div className="flex items-center gap-2">
+                              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10" />
                               <input
-                                type="checkbox"
-                                checked={ingredient.isFragranceComponent || false}
-                                onChange={(e) =>
-                                  updateIngredient(ingredient.id, "isFragranceComponent", e.target.checked)
-                                }
-                                className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-2 focus:ring-teal-500"
+                                type="text"
+                                value={ingredient.name}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  updateIngredient(ingredient.id, "name", value);
+                                  // Immediately update search query to enable filtering
+                                  setSearchQuery(value);
+                                  setFocusedIngredientId(ingredient.id);
+                                  setShowSuggestions(true); // Always show suggestions when user types
+                                  setSelectedSuggestionIndex(-1); // Reset selection when typing
+                                }}
+                                onFocus={() => {
+                                  setFocusedIngredientId(ingredient.id);
+                                  setSearchQuery(ingredient.name);
+                                  setShowSuggestions(true); // Show suggestions when input is focused
+                                  setSelectedSuggestionIndex(-1); // Reset selection on focus
+                                }}
+                                onBlur={() => {
+                                  // Delay hiding to allow clicks on dropdown items
+                                  setTimeout(() => {
+                                    setShowSuggestions(false);
+                                    setSelectedSuggestionIndex(-1);
+                                  }, 200);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (!shouldShowDropdown) return;
+                                  
+                                  if (e.key === "ArrowDown") {
+                                    e.preventDefault();
+                                    setSelectedSuggestionIndex((prev) => 
+                                      prev < suggestions.length - 1 ? prev + 1 : prev
+                                    );
+                                  } else if (e.key === "ArrowUp") {
+                                    e.preventDefault();
+                                    setSelectedSuggestionIndex((prev) => 
+                                      prev > 0 ? prev - 1 : -1
+                                    );
+                                  } else if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    if (selectedSuggestionIndex >= 0 && selectedSuggestionIndex < suggestions.length) {
+                                      selectIngredient(ingredient.id, suggestions[selectedSuggestionIndex]);
+                                    } else if (suggestions.length > 0) {
+                                      // Select first suggestion if none selected
+                                      selectIngredient(ingredient.id, suggestions[0]);
+                                    }
+                                  } else if (e.key === "Escape") {
+                                    e.preventDefault();
+                                    setShowSuggestions(false);
+                                    setSelectedSuggestionIndex(-1);
+                                  }
+                                }}
+                                placeholder="Search ingredients..."
+                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                               />
-                              <span className="text-sm text-gray-700">Fragrance</span>
-                            </label>
-                          </div>
-                          {shouldShowDropdown && (
-                            <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                              {suggestions.map((suggestion) => (
+                              <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+                                <input
+                                  type="checkbox"
+                                  checked={ingredient.isFragranceComponent || false}
+                                  onChange={(e) =>
+                                    updateIngredient(ingredient.id, "isFragranceComponent", e.target.checked)
+                                  }
+                                  className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-2 focus:ring-teal-500"
+                                />
+                                <span className="text-sm text-gray-700">Fragrance</span>
+                              </label>
+                            </div>
+                            {shouldShowDropdown && (
+                              <ul className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                              {suggestions.map((suggestion, index) => (
                                 <li key={suggestion.id}>
                                   <button
                                     type="button"
                                     onClick={() => selectIngredient(ingredient.id, suggestion)}
-                                    className="w-full text-left px-3 py-2 hover:bg-teal-50 border-b border-gray-100 last:border-b-0"
+                                    onMouseEnter={() => setSelectedSuggestionIndex(index)}
+                                    className={`w-full text-left px-3 py-2 border-b border-gray-100 last:border-b-0 ${
+                                      index === selectedSuggestionIndex
+                                        ? "bg-teal-100 hover:bg-teal-100"
+                                        : "hover:bg-teal-50"
+                                    }`}
                                   >
                                     <div className="font-medium text-gray-900 flex items-center gap-2">
                                       {suggestion.isCustom && (
@@ -3060,6 +3114,9 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                                       )}
                                     </div>
                                     <div className="text-xs text-gray-500">
+                                      {suggestion.inci && (
+                                        <span className="font-mono">INCI: {suggestion.inci} • </span>
+                                      )}
                                       Max: {suggestion.maxUsage}% • {suggestion.description}
                                     </div>
                                   </button>
@@ -3067,6 +3124,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                               ))}
                             </ul>
                           )}
+                          </div>
                           {ingredient.isCustom && (
                             <div className="mt-1 flex items-center gap-1">
                               <User className="w-3 h-3 text-blue-500" />
