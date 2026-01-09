@@ -194,6 +194,9 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
   const [ifraComplianceMap, setIfraComplianceMap] = useState<Record<string, IfraEntry[]>>({});
   const [ifraWarnings, setIfraWarnings] = useState<Array<{ ingredientName: string; inci: string; entries: IfraEntry[] }>>([]);
   
+  // String state for percentage inputs while focused (to preserve leading zeros and comma decimals)
+  const [percentInputById, setPercentInputById] = useState<Record<string, string>>({});
+  
   const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const requireAuth = (action: () => void) => {
@@ -3165,22 +3168,81 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                       <div className="py-3 px-4 align-top">
                         <div className="flex flex-col items-start">
                           <input
-                            type="number"
-                            value={ingredient.percentage || ""}
+                            type="text"
+                            value={
+                              percentInputById[ingredient.id] !== undefined
+                                ? percentInputById[ingredient.id]
+                                : ingredient.percentage !== undefined && ingredient.percentage !== null
+                                ? ingredient.percentage.toString().replace('.', ',')
+                                : ""
+                            }
+                            onFocus={(e) => {
+                              // Initialize string state from numeric value on focus
+                              const currentValue = ingredient.percentage !== undefined && ingredient.percentage !== null
+                                ? ingredient.percentage.toString().replace('.', ',')
+                                : "";
+                              setPercentInputById(prev => ({ ...prev, [ingredient.id]: currentValue }));
+                              e.target.select();
+                            }}
                             onChange={(e) => {
-                              const rawValue = parseFloat(e.target.value);
-                              // Clamp negative values to 0 - negative values must never propagate to state
-                              const clampedValue = rawValue < 0 ? 0 : (rawValue || 0);
+                              const inputValue = e.target.value;
+                              // Allow only digits, comma, dot, and empty string
+                              if (inputValue === "" || /^[0-9]*[,.]?[0-9]*$/.test(inputValue)) {
+                                setPercentInputById(prev => ({ ...prev, [ingredient.id]: inputValue }));
+                              }
+                            }}
+                            onBlur={(e) => {
+                              const inputValue = e.target.value.trim();
+                              // Normalize: replace comma with dot, handle leading dot
+                              let normalized = inputValue.replace(',', '.');
+                              if (normalized.startsWith('.')) {
+                                normalized = '0' + normalized;
+                              }
+                              // Parse to number
+                              const parsed = parseFloat(normalized);
+                              // Clamp negative values to 0
+                              const clampedValue = isNaN(parsed) ? 0 : (parsed < 0 ? 0 : parsed);
                               updateIngredient(
                                 ingredient.id,
                                 "percentage",
                                 clampedValue
                               );
+                              // Clear the temporary string state
+                              setPercentInputById(prev => {
+                                const next = { ...prev };
+                                delete next[ingredient.id];
+                                return next;
+                              });
                             }}
-                            placeholder="0.00"
-                            step="0.01"
-                            min="0"
-                            max="100"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const inputValue = (e.target as HTMLInputElement).value.trim();
+                                // Normalize: replace comma with dot, handle leading dot
+                                let normalized = inputValue.replace(',', '.');
+                                if (normalized.startsWith('.')) {
+                                  normalized = '0' + normalized;
+                                }
+                                // Parse to number
+                                const parsed = parseFloat(normalized);
+                                // Clamp negative values to 0
+                                const clampedValue = isNaN(parsed) ? 0 : (parsed < 0 ? 0 : parsed);
+                                updateIngredient(
+                                  ingredient.id,
+                                  "percentage",
+                                  clampedValue
+                                );
+                                // Clear the temporary string state
+                                setPercentInputById(prev => {
+                                  const next = { ...prev };
+                                  delete next[ingredient.id];
+                                  return next;
+                                });
+                                // Blur the input
+                                (e.target as HTMLInputElement).blur();
+                              }
+                            }}
+                            placeholder="0,00"
                             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
                               ingredient.percentage < 0 
                                 ? "border-red-500 bg-red-50" 
