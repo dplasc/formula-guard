@@ -44,3 +44,6 @@ supabase.com.txt
 # inventory artifacts
 ingredient-inventory.json
 INGREDIENT_INVENTORY_REPORT.md
+
+# editor
+.vscode/
