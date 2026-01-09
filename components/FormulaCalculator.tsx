@@ -142,6 +142,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
     productType: 'both' as 'leave-on' | 'rinse-off' | 'both',
   });
   const [showAdvancedLimits, setShowAdvancedLimits] = useState<boolean>(false);
+  const [showCustomModalDiscardConfirm, setShowCustomModalDiscardConfirm] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -250,6 +251,33 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [isDirty]);
+
+  // Handle Escape key for custom ingredient modal
+  useEffect(() => {
+    if (!showCustomModal) return;
+    
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showCustomModalDiscardConfirm) {
+          // If confirmation dialog is open, close it (keep editing)
+          e.preventDefault();
+          setShowCustomModalDiscardConfirm(false);
+        } else if (isCustomIngredientFormDirty()) {
+          // If form is dirty, show confirmation
+          e.preventDefault();
+          setShowCustomModalDiscardConfirm(true);
+        } else {
+          // Form is clean, close modal
+          e.preventDefault();
+          resetCustomIngredientForm();
+          setShowCustomModal(false);
+        }
+      }
+    };
+    
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [showCustomModal, showCustomModalDiscardConfirm, newCustomIngredient, editingIngredientId, customIngredients]);
 
   // Intercept internal navigation links when isDirty is true
   useEffect(() => {
@@ -1437,6 +1465,97 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
     localStorage.setItem("saved_formulas", JSON.stringify(updatedFormulas));
   };
 
+  // Helper: Get initial empty state for custom ingredient form
+  const getEmptyCustomIngredient = () => ({
+    name: "",
+    inci: "",
+    averagePricePerKg: 0,
+    category: "Lipid" as const,
+    subcategory: "",
+    minUsage: 0.1,
+    maxUsage: 100,
+    maxUsageLeaveOn: undefined as number | undefined,
+    maxUsageRinseOff: undefined as number | undefined,
+    description: "",
+    absorption: "",
+    comedogenicRating: undefined as number | undefined,
+    heatSensitive: false,
+    productType: 'both' as 'leave-on' | 'rinse-off' | 'both',
+  });
+
+  // Helper: Check if custom ingredient form has unsaved changes
+  const isCustomIngredientFormDirty = () => {
+    const empty = getEmptyCustomIngredient();
+    const current = newCustomIngredient;
+    
+    // Check if editing mode - compare against the ingredient being edited
+    if (editingIngredientId) {
+      const editing = customIngredients.find(ing => ing.id === editingIngredientId);
+      if (!editing) return false; // If ingredient not found, treat as new
+      
+      // Compare current form values to the ingredient being edited
+      return (
+        current.name.trim() !== editing.name ||
+        current.inci.trim() !== editing.inci ||
+        current.averagePricePerKg !== editing.averagePricePerKg ||
+        current.category !== editing.category ||
+        (current.subcategory || "") !== (editing.subcategory || "") ||
+        current.minUsage !== editing.minUsage ||
+        current.maxUsage !== editing.maxUsage ||
+        current.maxUsageLeaveOn !== (editing.maxUsageLeaveOn ?? undefined) ||
+        current.maxUsageRinseOff !== (editing.maxUsageRinseOff ?? undefined) ||
+        (current.description || "") !== (editing.description || "") ||
+        (current.absorption || "") !== (editing.absorption || "") ||
+        current.comedogenicRating !== editing.comedogenicRating ||
+        current.heatSensitive !== (editing.heatSensitive || false) ||
+        current.productType !== (editing.productType || 'both')
+      );
+    }
+    
+    // New ingredient mode - compare against empty state
+    return (
+      current.name.trim() !== empty.name ||
+      current.inci.trim() !== empty.inci ||
+      current.averagePricePerKg !== empty.averagePricePerKg ||
+      current.category !== empty.category ||
+      current.subcategory !== empty.subcategory ||
+      current.minUsage !== empty.minUsage ||
+      current.maxUsage !== empty.maxUsage ||
+      current.maxUsageLeaveOn !== empty.maxUsageLeaveOn ||
+      current.maxUsageRinseOff !== empty.maxUsageRinseOff ||
+      current.description !== empty.description ||
+      current.absorption !== empty.absorption ||
+      current.comedogenicRating !== empty.comedogenicRating ||
+      current.heatSensitive !== empty.heatSensitive ||
+      current.productType !== empty.productType
+    );
+  };
+
+  // Helper: Reset custom ingredient form
+  const resetCustomIngredientForm = () => {
+    setNewCustomIngredient(getEmptyCustomIngredient());
+    setEditingIngredientId(null);
+    setShowAdvancedLimits(false);
+  };
+
+  // Helper: Attempt to close modal (shows confirmation if dirty)
+  const attemptCloseCustomModal = () => {
+    if (isCustomIngredientFormDirty()) {
+      setShowCustomModalDiscardConfirm(true);
+    } else {
+      resetCustomIngredientForm();
+      setShowCustomModal(false);
+      setShowCustomModalDiscardConfirm(false);
+    }
+  };
+
+  // Helper: Confirm discard and close
+  const confirmDiscardAndClose = () => {
+    resetCustomIngredientForm();
+    setShowCustomModal(false);
+    setShowCustomModalDiscardConfirm(false);
+  };
+
   const handleSaveCustomIngredient = () => {
     if (!newCustomIngredient.name.trim() || !newCustomIngredient.inci.trim()) {
       alert("Please enter all required data: Name and INCI must be filled.");
@@ -1487,23 +1606,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
     localStorage.setItem("custom_ingredients", JSON.stringify(updatedCustomIngredients));
 
     // Reset form and close modal
-    setNewCustomIngredient({
-      name: "",
-      inci: "",
-      averagePricePerKg: 0,
-      category: "Lipid",
-      subcategory: "",
-      minUsage: 0.1,
-      maxUsage: 100,
-      maxUsageLeaveOn: undefined,
-      maxUsageRinseOff: undefined,
-      description: "",
-      absorption: "",
-      comedogenicRating: undefined,
-      heatSensitive: false,
-      productType: 'both',
-    });
-    setShowAdvancedLimits(false);
+    resetCustomIngredientForm();
     setShowCustomModal(false);
   };
 
@@ -1528,6 +1631,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
     setShowAdvancedLimits(ingredient.maxUsageLeaveOn != null || ingredient.maxUsageRinseOff != null);
     setEditingIngredientId(ingredient.id);
     setShowManageCustomModal(false);
+    setShowCustomModalDiscardConfirm(false);
     setShowCustomModal(true);
   };
 
@@ -2850,6 +2954,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                 productType: 'both',
               });
               setShowAdvancedLimits(false);
+              setShowCustomModalDiscardConfirm(false);
               setShowCustomModal(true);
             }}
             className="flex items-center gap-2 px-4 py-2.5 h-10 bg-white border-2 border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-colors font-medium whitespace-nowrap"
@@ -3972,26 +4077,11 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
         {showCustomModal && (
           <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4"
-            onClick={() => {
-              setShowCustomModal(false);
-              setEditingIngredientId(null);
-              setNewCustomIngredient({
-                name: "",
-                inci: "",
-                averagePricePerKg: 0,
-                category: "Lipid",
-                subcategory: "",
-                minUsage: 0.1,
-                maxUsage: 100,
-                maxUsageLeaveOn: undefined,
-                maxUsageRinseOff: undefined,
-                description: "",
-                absorption: "",
-                comedogenicRating: undefined,
-                heatSensitive: false,
-                productType: 'both',
-              });
-              setShowAdvancedLimits(false);
+            onClick={(e) => {
+              // Prevent backdrop clicks from closing the modal
+              if (e.target === e.currentTarget) {
+                e.preventDefault();
+              }
             }}
           >
             <div
@@ -4003,27 +4093,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                   {editingIngredientId ? "Edit Custom Ingredient" : "Add Custom Ingredient"}
                 </h3>
                 <button
-                  onClick={() => {
-                    setShowCustomModal(false);
-                    setEditingIngredientId(null);
-                    setNewCustomIngredient({
-                      name: "",
-                      inci: "",
-                      averagePricePerKg: 0,
-                      category: "Lipid",
-                      subcategory: "",
-                      minUsage: 0.1,
-                      maxUsage: 100,
-                      maxUsageLeaveOn: undefined,
-                      maxUsageRinseOff: undefined,
-                      description: "",
-                      absorption: "",
-                      comedogenicRating: undefined,
-                      heatSensitive: false,
-                      productType: 'both',
-                    });
-                    setShowAdvancedLimits(false);
-                  }}
+                  onClick={attemptCloseCustomModal}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
                   aria-label="Close"
                 >
@@ -4323,27 +4393,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
               </div>
               <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200">
                 <button
-                  onClick={() => {
-                    setShowCustomModal(false);
-                    setEditingIngredientId(null);
-                    setNewCustomIngredient({
-                      name: "",
-                      inci: "",
-                      averagePricePerKg: 0,
-                      category: "Lipid",
-                      subcategory: "",
-                      minUsage: 0.1,
-                      maxUsage: 100,
-                      maxUsageLeaveOn: undefined,
-                      maxUsageRinseOff: undefined,
-                      description: "",
-                      absorption: "",
-                      comedogenicRating: undefined,
-                      heatSensitive: false,
-                      productType: 'both',
-                    });
-                    setShowAdvancedLimits(false);
-                  }}
+                  onClick={attemptCloseCustomModal}
                   className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors font-medium"
                 >
                   Cancel
@@ -4354,6 +4404,46 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                 >
                   {editingIngredientId ? "Update" : "Save"} Ingredient
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Discard Changes Confirmation Dialog */}
+        {showCustomModalDiscardConfirm && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowCustomModalDiscardConfirm(false);
+              }
+            }}
+          >
+            <div
+              className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Discard changes?
+                </h3>
+                <p className="text-sm text-gray-600 mb-6">
+                  You have unsaved changes. Are you sure you want to close without saving?
+                </p>
+                <div className="flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => setShowCustomModalDiscardConfirm(false)}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors font-medium"
+                  >
+                    No, keep editing
+                  </button>
+                  <button
+                    onClick={confirmDiscardAndClose}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
+                  >
+                    Yes, discard
+                  </button>
+                </div>
               </div>
             </div>
           </div>
