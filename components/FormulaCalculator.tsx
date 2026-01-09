@@ -144,6 +144,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
   });
   const [showAdvancedLimits, setShowAdvancedLimits] = useState<boolean>(false);
   const [showCustomModalDiscardConfirm, setShowCustomModalDiscardConfirm] = useState<boolean>(false);
+  const [maxUsageInput, setMaxUsageInput] = useState<string>("100");
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -1536,11 +1537,30 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
     );
   };
 
+  // Helper: Normalize max usage input value
+  const normalizeMaxUsage = (input: string): number => {
+    // Replace comma with dot
+    const normalized = input.trim().replace(/,/g, '.');
+    // If empty, default to 100
+    if (normalized === "") {
+      return 100;
+    }
+    // Parse as float
+    const parsed = parseFloat(normalized);
+    // If NaN, default to 100
+    if (isNaN(parsed)) {
+      return 100;
+    }
+    // Clamp between 0 and 100
+    return Math.max(0, Math.min(100, parsed));
+  };
+
   // Helper: Reset custom ingredient form
   const resetCustomIngredientForm = () => {
     setNewCustomIngredient(getEmptyCustomIngredient());
     setEditingIngredientId(null);
     setShowAdvancedLimits(false);
+    setMaxUsageInput("100");
   };
 
   // Helper: Attempt to close modal (shows confirmation if dirty)
@@ -1632,6 +1652,8 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
       heatSensitive: ingredient.heatSensitive || false,
       productType: ingredient.productType || 'both', // Backward compatibility: default to 'both' if missing
     });
+    // Initialize maxUsageInput string state from numeric value
+    setMaxUsageInput(ingredient.maxUsage?.toString() || "100");
     // Show advanced section if either field has a value
     setShowAdvancedLimits(ingredient.maxUsageLeaveOn != null || ingredient.maxUsageRinseOff != null);
     setEditingIngredientId(ingredient.id);
@@ -2978,6 +3000,7 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                 heatSensitive: false,
                 productType: 'both',
               });
+              setMaxUsageInput("100");
               setShowAdvancedLimits(false);
               setShowCustomModalDiscardConfirm(false);
               setShowCustomModal(true);
@@ -4249,16 +4272,35 @@ export default function FormulaCalculator({ initialFormulaId, initialFormulaData
                     </label>
                     <input
                       id="customMaxUsage"
-                      type="number"
-                      value={newCustomIngredient.maxUsage}
-                      onChange={(e) =>
+                      type="text"
+                      value={maxUsageInput}
+                      onChange={(e) => {
+                        // Allow intermediate input while typing
+                        setMaxUsageInput(e.target.value);
+                      }}
+                      onBlur={(e) => {
+                        // Normalize on blur
+                        const normalized = normalizeMaxUsage(e.target.value);
                         setNewCustomIngredient({
                           ...newCustomIngredient,
-                          maxUsage: parseFloat(e.target.value) || 100,
-                        })
-                      }
-                      step="0.1"
-                      min="0.1"
+                          maxUsage: normalized,
+                        });
+                        setMaxUsageInput(normalized.toString());
+                      }}
+                      onKeyDown={(e) => {
+                        // Normalize on Enter key
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const normalized = normalizeMaxUsage(maxUsageInput);
+                          setNewCustomIngredient({
+                            ...newCustomIngredient,
+                            maxUsage: normalized,
+                          });
+                          setMaxUsageInput(normalized.toString());
+                          // Optionally blur the field
+                          e.currentTarget.blur();
+                        }
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                     />
                     <p className="mt-1 text-xs text-gray-500">
